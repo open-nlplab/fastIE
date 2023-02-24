@@ -197,6 +197,7 @@ class Registry:
 
     def get(self, key):
         """Get the registry record.
+
         Args:
             key (str): The class name in string format.
         Returns:

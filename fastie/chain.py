@@ -6,6 +6,7 @@ from fastie.tasks import BaseTask
 
 
 class Chain(defaultlist):
+
     def __init__(self, *args):
         defaultlist.__init__(self, *args)
 

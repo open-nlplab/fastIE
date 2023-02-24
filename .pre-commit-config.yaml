@@ -19,8 +19,7 @@ repos:
     hooks:
       - id: codespell
         args:
-          - --skip=docs/*,tests/data_for_tests/*,tutorials,fastNLP/transformers/*,*.tsv
-          - -L ans,rouge,ROUGE,warmup
+          - --skip=docs/*,tutorials
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.2.0
     hooks:

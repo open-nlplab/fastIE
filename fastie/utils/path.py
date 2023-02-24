@@ -38,6 +38,7 @@ def symlink(src, dst, overwrite=True, **kwargs):
 
 def scandir(dir_path, suffix=None, recursive=False, case_sensitive=True):
     """Scan a directory to find the interested files.
+
     Args:
         dir_path (str | :obj:`Path`): Path of the directory.
         suffix (str | tuple(str), optional): File suffix that we are
@@ -78,8 +79,9 @@ def scandir(dir_path, suffix=None, recursive=False, case_sensitive=True):
     return _scandir(dir_path, suffix, recursive, case_sensitive)
 
 
-def find_vcs_root(path, markers=('.git',)):
+def find_vcs_root(path, markers=('.git', )):
     """Finds the root directory (including itself) of specified markers.
+
     Args:
         path (str): Path of directory or file.
         markers (list[str], optional): List of file or directory names.

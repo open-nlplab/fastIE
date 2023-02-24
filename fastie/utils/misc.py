@@ -12,6 +12,7 @@ from itertools import repeat
 
 # From PyTorch internals
 def _ntuple(n):
+
     def parse(x):
         if isinstance(x, collections.abc.Iterable):
             return x
@@ -29,6 +30,7 @@ to_ntuple = _ntuple
 
 def is_str(x):
     """Whether the input is an string instance.
+
     Note: This method is deprecated since python 2 is no longer supported.
     """
     return isinstance(x, str)
@@ -81,6 +83,7 @@ def import_modules_from_strings(imports, allow_failed_imports=False):
 
 def iter_cast(inputs, dst_type, return_type=None):
     """Cast elements of an iterable object into some type.
+
     Args:
         inputs (Iterable): The input object.
         dst_type (type): Destination type.
@@ -104,6 +107,7 @@ def iter_cast(inputs, dst_type, return_type=None):
 
 def list_cast(inputs, dst_type):
     """Cast elements of an iterable object into a list of some type.
+
     A partial method of :func:`iter_cast`.
     """
     return iter_cast(inputs, dst_type, return_type=list)
@@ -111,6 +115,7 @@ def list_cast(inputs, dst_type):
 
 def tuple_cast(inputs, dst_type):
     """Cast elements of an iterable object into a tuple of some type.
+
     A partial method of :func:`iter_cast`.
     """
     return iter_cast(inputs, dst_type, return_type=tuple)
@@ -118,6 +123,7 @@ def tuple_cast(inputs, dst_type):
 
 def is_seq_of(seq, expected_type, seq_type=None):
     """Check whether it is a sequence of some type.
+
     Args:
         seq (Sequence): The sequence to be checked.
         expected_type (type): Expected type of sequence items.
@@ -140,6 +146,7 @@ def is_seq_of(seq, expected_type, seq_type=None):
 
 def is_list_of(seq, expected_type):
     """Check whether it is a list of some type.
+
     A partial method of :func:`is_seq_of`.
     """
     return is_seq_of(seq, expected_type, seq_type=list)
@@ -147,6 +154,7 @@ def is_list_of(seq, expected_type):
 
 def is_tuple_of(seq, expected_type):
     """Check whether it is a tuple of some type.
+
     A partial method of :func:`is_seq_of`.
     """
     return is_seq_of(seq, expected_type, seq_type=tuple)
@@ -154,6 +162,7 @@ def is_tuple_of(seq, expected_type):
 
 def slice_list(in_list, lens):
     """Slice a list into several sub lists by a list of given length.
+
     Args:
         in_list (list): The list to be sliced.
         lens(int or list): The expected length of each out list.
@@ -178,6 +187,7 @@ def slice_list(in_list, lens):
 
 def concat_list(in_list):
     """Concatenate a list of list into a single list.
+
     Args:
         in_list (list): The list of list to be merged.
     Returns:
@@ -192,6 +202,7 @@ def check_prerequisites(
         msg_tmpl='Prerequisites "{}" are required in method "{}" but not '
                  'found, please install them first.'):  # yapf: disable
     """A decorator factory to check if prerequisites are satisfied.
+
     Args:
         prerequisites (str of list[str]): Prerequisites to be checked.
         checker (callable): The checker method that returns True if a
@@ -267,6 +278,7 @@ def requires_executable(prerequisites):
 def deprecated_api_warning(name_dict, cls_name=None):
     """A decorator to check if some arguments are deprecate and try to replace
     deprecate src_arg_name to dst_arg_name.
+
     Args:
         name_dict(dict):
             key (str): Deprecate argument names.
@@ -323,6 +335,7 @@ def deprecated_api_warning(name_dict, cls_name=None):
 
 def is_method_overridden(method, base_class, derived_class):
     """Check if a method of base class is overridden in derived class.
+
     Args:
         method (str): the method name to check.
         base_class (type): the class of the base class.
@@ -341,6 +354,7 @@ def is_method_overridden(method, base_class, derived_class):
 
 def has_method(obj: object, method: str) -> bool:
     """Check whether the object has a method.
+
     Args:
         method (str): The method name to check.
         obj (object): The object to check.

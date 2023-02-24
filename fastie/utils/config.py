@@ -184,8 +184,8 @@ class Config:
             raise OSError('Only py/yml/yaml/json type are supported now!')
 
         with tempfile.TemporaryDirectory() as temp_config_dir:
-            temp_config_file = tempfile.NamedTemporaryFile(
-                dir=temp_config_dir, suffix=fileExtname)
+            temp_config_file = tempfile.NamedTemporaryFile(dir=temp_config_dir,
+                                                           suffix=fileExtname)
             if platform.system() == 'Windows':
                 temp_config_file.close()
             temp_config_name = osp.basename(temp_config_file.name)
@@ -209,8 +209,8 @@ class Config:
                     name: value
                     for name, value in mod.__dict__.items()
                     if not name.startswith('__')
-                       and not isinstance(value, types.ModuleType)
-                       and not isinstance(value, types.FunctionType)
+                    and not isinstance(value, types.ModuleType)
+                    and not isinstance(value, types.FunctionType)
                 }
                 # delete imported module
                 del sys.modules[temp_module_name]
@@ -338,6 +338,7 @@ class Config:
     @staticmethod
     def fromstring(cfg_str, file_format):
         """Generate config from config str.
+
         Args:
             cfg_str (str): Config str.
             file_format (str): Config file format corresponding to the
@@ -351,9 +352,10 @@ class Config:
             # check if users specify a wrong suffix for python
             warnings.warn(
                 'Please check "file_format", the file format may be .py')
-        with tempfile.NamedTemporaryFile(
-                'w', encoding='utf-8', suffix=file_format,
-                delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile('w',
+                                         encoding='utf-8',
+                                         suffix=file_format,
+                                         delete=False) as temp_file:
             temp_file.write(cfg_str)
             # on windows, previous implementation cause error
             # see PR 1077 for details
@@ -491,10 +493,9 @@ class Config:
         cfg_dict = self._cfg_dict.to_dict()
         text = _format_dict(cfg_dict, outest_level=True)
         # copied from setup.cfg
-        yapf_style = dict(
-            based_on_style='pep8',
-            blank_line_before_nested_class_or_def=True,
-            split_before_expression_after_opening_paren=True)
+        yapf_style = dict(based_on_style='pep8',
+                          blank_line_before_nested_class_or_def=True,
+                          split_before_expression_after_opening_paren=True)
         text, _ = FormatCode(text, style_config=yapf_style, verify=True)
 
         return text
@@ -623,8 +624,9 @@ class Config:
         cfg_dict = super().__getattribute__('_cfg_dict')
         super().__setattr__(
             '_cfg_dict',
-            Config._merge_a_into_b(
-                option_cfg_dict, cfg_dict, allow_list_keys=allow_list_keys))
+            Config._merge_a_into_b(option_cfg_dict,
+                                   cfg_dict,
+                                   allow_list_keys=allow_list_keys))
 
 
 class DictAction(Action):
@@ -671,6 +673,7 @@ class DictAction(Action):
 
         def find_next_comma(string):
             """Find the position of next comma in the string.
+
             If no ',' is found in the string, return the string length. All
             chars inside '()' and '[]' are treated as one element and thus ','
             inside these brackets are ignored.
