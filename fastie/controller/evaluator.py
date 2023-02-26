@@ -20,7 +20,7 @@ class EvaluatorConfig(BaseNodeConfig):
 class Evaluator(BaseController):
 
     def __init__(self):
-        super(Evaluator, self).__init__(s)
+        super(Evaluator, self).__init__()
         set_flag('eval')
 
     def run(self,

@@ -234,8 +234,8 @@ def intercept_config():
 
 
 def interact_handler():
-    # if not sys.argv[0].endswith('interact'):
-    #     return
+    if not sys.argv[0].endswith('interact'):
+        return
     from fastie.dataset.io.sentence import Sentence
     sentence = ''
     while sentence != '!exit':
@@ -253,8 +253,6 @@ def main():
     Exhibition.intercept()
     # intercept_config()
     # parse_config()
-    _ = chain + CONTROLLER.get('interactor')()
-    set_flag('interact')
     if sys.argv[0].endswith('train'):
         _ = chain + CONTROLLER.get('trainer')()
         set_flag('train')
