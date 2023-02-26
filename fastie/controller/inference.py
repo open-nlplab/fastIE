@@ -1,4 +1,4 @@
-from fastie.controller import BaseController, CONTROLLER
+from fastie.controller.BaseController import BaseController, CONTROLLER
 from fastie.node import BaseNodeConfig
 from fastie.envs import set_flag
 
@@ -83,15 +83,20 @@ class Inference(BaseController):
                  save_path: Optional[str] = None,
                  verbose: bool = True,
                  **kwargs):
-        BaseController.__init__(self, **kwargs)
+        super(Inference, self).__init__(**kwargs)
         self.save_path: Optional[str] = save_path
         self.verbose: bool = verbose
         set_flag('infer')
 
     def run(self,
-            parameters_or_data: Union[dict, DataBundle, DataSet, str,
-                                      Sequence[str]] = dict()):
+            parameters_or_data: Optional[Union[dict, DataBundle, DataSet, str,
+                                               Sequence[str]]] = None):
         parameters_or_data = BaseController.run(self, parameters_or_data)
+        if parameters_or_data is None:
+            print(
+                'Inference tool do not allow task and dataset to be left empty. '
+            )
+            exit(1)
         parameters_or_data['evaluate_fn'] = 'inference_step'
         # parameters_or_data["evaluate_batch_step_fn"] = generate_step_fn
         parameters_or_data['verbose'] = False

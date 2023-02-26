@@ -4,7 +4,7 @@ from argparse import ArgumentParser, Namespace, Action
 from dataclasses import dataclass, field
 from typing import Sequence, Optional
 
-from fastie.controller import CONTROLLER
+from fastie.controller import CONTROLLER, Interactor
 from fastie.dataset import DATASET
 from fastie.envs import set_flag, FASTIE_HOME, set_config, global_config, config_flag, parser, find_config
 from fastie.exhibition import Exhibition
@@ -75,7 +75,7 @@ class CommandNodeConfig(BaseNodeConfig):
     dataset: str = field(default='',
                          metadata=dict(
                              help='The dataset you want to work with.',
-                             existence=True,
+                             existence=['train', 'eval', 'infer'],
                              alias='-d'))
 
 
@@ -233,12 +233,28 @@ def intercept_config():
                 break
 
 
+def interact_handler():
+    # if not sys.argv[0].endswith('interact'):
+    #     return
+    from fastie.dataset.io.sentence import Sentence
+    sentence = ''
+    while sentence != '!exit':
+        sentence = input('Type a sequence, type `!exit` to end interacting:\n')
+        if len(sentence) == 0:
+            continue
+        if sentence == '!exit':
+            break
+        sentence = Sentence(sentence=sentence)
+        _ = chain + sentence
+        chain.run()
+
+
 def main():
     Exhibition.intercept()
     # intercept_config()
     # parse_config()
-    _ = chain + CONTROLLER.get('inference')()
-    set_flag('infer')
+    _ = chain + CONTROLLER.get('interactor')()
+    set_flag('interact')
     if sys.argv[0].endswith('train'):
         _ = chain + CONTROLLER.get('trainer')()
         set_flag('train')
@@ -249,14 +265,15 @@ def main():
         _ = chain + CONTROLLER.get('inference')()
         set_flag('infer')
     elif sys.argv[0].endswith('interact'):
-        _ = chain + CONTROLLER.get('inference')()
-        set_flag('infer')
+        _ = chain + CONTROLLER.get('interactor')()
+        set_flag('interact')
     elif sys.argv[0].endswith('web'):
         set_flag('web')
     node = CommandNode()
     _ = node.parser
     args = parser.parse_known_args()
     args = parser.parse_known_args(args[1])
+    interact_handler()
     chain.run()
 
 

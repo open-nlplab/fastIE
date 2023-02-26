@@ -17,7 +17,7 @@ def build_task(config: Optional[Union[dict, BaseNodeConfig]] = None):
     if config is None:
         config = global_config
     origin_global_config = deepcopy(global_config)
-    if not hasattr(config, 'task') or 'task' not in config.keys():
+    if not hasattr(config, 'task') and 'task' not in config.keys():
         raise ValueError('The task you want to use is not specified.')
     if hasattr(config, 'task'):
         task, solution = getattr(config, 'task').split('/')

@@ -1,5 +1,6 @@
 from .chain import Chain
-from .controller import CONTROLLER, Trainer, TrianerConfig, Evaluator, EvaluatorConfig, Inference, InferenceConfig
+from .controller import CONTROLLER, Trainer, TrianerConfig, Evaluator, \
+    EvaluatorConfig, Inference, InferenceConfig, Interactor, InteractorConfig
 from .dataset import DATASET, BaseDataset, BaseDatasetConfig
 from .envs import get_flag, set_flag, parser, set_config, get_config
 from .node import BaseNode, BaseNodeConfig
@@ -9,5 +10,5 @@ __all__ = [
     'BaseNode', 'Chain', 'get_flag', 'set_flag', 'parser', 'BaseNodeConfig',
     'set_config', 'get_config', 'NER', 'EE', 'RE', 'DATASET', 'CONTROLLER',
     'Trainer', 'TrianerConfig', 'Evaluator', 'EvaluatorConfig', 'Inference',
-    'InferenceConfig'
+    'InferenceConfig', 'Interactor', 'InteractorConfig'
 ]

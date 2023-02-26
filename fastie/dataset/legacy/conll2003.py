@@ -1,13 +1,12 @@
 from dataclasses import dataclass, field
 from typing import Union
 
+import numpy as np
 from datasets import load_dataset
 from fastNLP import DataSet, Instance, Vocabulary
 from fastNLP.io import DataBundle
 
-from fastie.dataset import BaseDataset, DATASET, BaseDatasetConfig
-
-import numpy as np
+from fastie.dataset.BaseDataset import BaseDataset, DATASET, BaseDatasetConfig
 
 
 @dataclass
@@ -33,11 +32,10 @@ class Conll2003(BaseDataset):
                  refresh_cache: bool = False,
                  tag_vocab: Union[Vocabulary, dict] = None,
                  **kwargs):
-        BaseDataset.__init__(self,
-                             cache=cache,
-                             refresh_cache=refresh_cache,
-                             tag_vocab=tag_vocab,
-                             **kwargs)
+        super(Conll2003, self).__init__(cache=cache,
+                                        refresh_cache=refresh_cache,
+                                        tag_vocab=tag_vocab,
+                                        **kwargs)
         self.tag = tag
 
     def run(self):

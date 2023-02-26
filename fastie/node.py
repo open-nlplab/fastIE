@@ -5,7 +5,7 @@ import zipfile
 from argparse import ArgumentParser, Namespace, Action
 from dataclasses import dataclass, MISSING
 from functools import reduce
-from typing import Callable, Union, Sequence, Optional, Dict, List
+from typing import Callable, Union, Sequence, Optional, Dict
 
 from fastie.envs import parser as global_parser, get_flag, type_dict, global_config, \
     parser_flag, set_config, config_flag, find_config
@@ -53,8 +53,10 @@ class BaseNode(object):
     """
     _config = BaseNodeConfig()
     _help = 'The base class of all node objects'
+    _inited = False
 
     def __init__(self, **kwargs):
+        self._inited = True
         self._parser = global_parser.add_argument_group(
             title=getattr(self, '_help'))
 
@@ -127,8 +129,7 @@ class BaseNode(object):
                             or isinstance(value['metadata']['existence'], list) \
                             and get_flag() in value['metadata']['existence'] \
                             or isinstance(value['metadata']['existence'], str) \
-                            and get_flag() == value['metadata'][
-                        'existence']:
+                            and get_flag() == value['metadata']['existence']:
                         default_value = None
                         if value['default'] != MISSING:
                             default_value = value['default']
@@ -266,16 +267,18 @@ class BaseNode(object):
                     break
             for index in range(index + 1, len(lines)):
                 if ':' in lines[index]:
-                    if re.search(r':(.*?)\((.*?)\)\[(.*?)\]=(.*?):(.*?)$',
-                                 lines[index]) is None:
+                    match_result = re.search(
+                        r':(.*?)\((.*?)\)\[(.*?)\]=(.*?):(.*?)$', lines[index])
+                    if match_result is None:
                         continue
-                    key, t, flags, value, description = \
-                        re.search(r':(.*?)\((.*?)\)\[(.*?)\]=(.*?):(.*?)$', lines[index]).groups()
-                    comments[key.strip()] = dict(
-                        type=t.strip(),
-                        flags=flags.strip().split(','),
-                        value=value,
-                        description=description)
+                    else:
+                        key, t, flags, value, description = match_result.groups(
+                        )
+                        comments[key.strip()] = dict(
+                            type=t.strip(),
+                            flags=flags.strip().split(','),
+                            value=value,
+                            description=description)
                 if '"""' in lines[index]:
                     break
             for cls in cls.__bases__:
@@ -305,9 +308,8 @@ class BaseNode(object):
         fields: Dict[str, dict] = dict()
         for key in self.__dir__():
             if isinstance(object.__getattribute__(self, key), BaseNodeConfig):
-                ConfigClass: type = object.__getattribute__(self,
-                                                            key).__class__
-                for field_name, field_value in ConfigClass.__dict__[
+                config_cls = object.__getattribute__(self, key).__class__
+                for field_name, field_value in config_cls.__dict__[
                         '__dataclass_fields__'].items():
                     fields[field_name] = dict(
                         type=getattr(field_value, 'type'),
@@ -331,5 +333,8 @@ class BaseNode(object):
                 and type(value) in [t for t in type_dict.values()] \
                 and not isinstance(value, Callable) \
                 and not isinstance(value, BaseNodeConfig):
-            global_config[key] = value
+            if key in global_config.keys():
+                object.__setattr__(self, key, value)
+            else:
+                global_config[key] = value
         object.__setattr__(self, key, value)

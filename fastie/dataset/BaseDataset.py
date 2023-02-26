@@ -1,14 +1,13 @@
-from fastie.node import BaseNode, BaseNodeConfig
-from fastie.utils import Registry
-from fastie.envs import FASTIE_HOME
+import os
+from dataclasses import dataclass, field
+from types import MethodType
+from typing import Union
 
 from fastNLP import Vocabulary, cache_results
 
-from typing import Union
-
-from dataclasses import dataclass, field
-
-import os
+from fastie.envs import FASTIE_HOME
+from fastie.node import BaseNode, BaseNodeConfig
+from fastie.utils import Registry
 
 DATASET = Registry('DATASET')
 
@@ -48,8 +47,8 @@ class BaseDataset(BaseNode):
                  tag_vocab: Union[Vocabulary, dict] = None,
                  **kwargs):
         BaseNode.__init__(self, **kwargs)
-        self._cache: bool = cache
         self.refresh_cache: bool = refresh_cache
+        self.cache: bool = cache
         if tag_vocab is not None:
             if isinstance(tag_vocab, dict):
                 if isinstance(list(tag_vocab.keys())[0], int):
@@ -70,10 +69,12 @@ class BaseDataset(BaseNode):
     def cache(self, value: bool):
         if value:
             # 保存 cache 的位置默认为 `~/.fastie/cache/BaseDataset/cache.pkl`
-            self.run = cache_results(
-                _cache_fp=
-                f"{os.path.join(FASTIE_HOME, f'cache/{self.__class__.__name__}/cache.pkl')}",
-                _refresh=self.refresh_cache)(self.run)
+            object.__setattr__(
+                self, 'run',
+                cache_results(
+                    _cache_fp=
+                    f"{os.path.join(FASTIE_HOME, f'cache/{self.__class__.__name__}/cache.pkl')}",
+                    _refresh=self.refresh_cache)(self.run))
         self._cache = value
 
     def run(self):

@@ -13,6 +13,8 @@ class Chain(defaultlist):
     def run(self):
         result = None
         for node in self:
+            if node is None:
+                continue
             result = node(result)
         return result
 

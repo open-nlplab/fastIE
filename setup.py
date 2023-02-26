@@ -27,7 +27,8 @@ setup(name='fastie',
           'console_scripts': [
               'fastie-train = fastie.command:main',
               'fastie-eval = fastie.command:main',
-              'fastie-infer = fastie.command:main'
+              'fastie-infer = fastie.command:main',
+              'fastie-interact = fastie.command:main',
           ]
       },
       data_files=find_configs())

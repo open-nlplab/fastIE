@@ -1,15 +1,16 @@
-from fastie.node import BaseNode
-from fastie.dataset import DATASET, BaseDatasetConfig, BaseDataset
-from fastie.envs import get_config
+"""这个类还没写好，请勿参考."""
 
-from fastNLP import DataSet, Instance, Vocabulary
-from fastNLP.io import Loader, DataBundle
-
+import os
 from dataclasses import dataclass, field
 from functools import reduce
-import os
-
 from typing import Union, Sequence, Optional, List
+
+from fastNLP import DataSet, Instance, Vocabulary
+
+from fastNLP.io import Loader, DataBundle
+
+from fastie.dataset.BaseDataset import DATASET, BaseDatasetConfig, BaseDataset
+from fastie.envs import get_config
 
 
 @dataclass
@@ -62,11 +63,10 @@ class ColumnNER(BaseDataset):
                  refresh_cache: bool = False,
                  tag_vocab: Optional[Union[Vocabulary, dict]] = None,
                  **kwargs):
-        BaseDataset.__init__(self,
-                             cache=cache,
-                             refresh_cache=refresh_cache,
-                             tag_vocab=tag_vocab,
-                             **kwargs)
+        super(ColumnNER, self).__init__(cache=cache,
+                                        refresh_cache=refresh_cache,
+                                        tag_vocab=tag_vocab,
+                                        **kwargs)
         self.folder = folder
         self.token_index = token_index
         self.tag_index = tag_index

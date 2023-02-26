@@ -1,11 +1,10 @@
-from fastie.dataset import DATASET, BaseDataset, BaseDatasetConfig
-
-from typing import Union, Sequence, Optional
-
 from dataclasses import dataclass, field
+from typing import Union, Sequence, Optional
 
 from fastNLP import DataSet, Instance, Vocabulary
 from fastNLP.io import DataBundle
+
+from fastie.dataset.BaseDataset import DATASET, BaseDataset, BaseDatasetConfig
 
 
 @dataclass
@@ -28,11 +27,10 @@ class Sentence(BaseDataset):
                  refresh_cache: bool = False,
                  tag_vocab: Optional[Union[Vocabulary, dict]] = None,
                  **kwargs):
-        BaseDataset.__init__(self,
-                             cache=cache,
-                             refresh_cache=refresh_cache,
-                             tag_vocab=tag_vocab,
-                             **kwargs)
+        super(Sentence, self).__init__(cache=cache,
+                                       refresh_cache=refresh_cache,
+                                       tag_vocab=tag_vocab,
+                                       **kwargs)
         self.sentence = sentence
 
     def run(self):
