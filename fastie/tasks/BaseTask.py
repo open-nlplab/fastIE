@@ -21,15 +21,6 @@ class BaseTaskConfig(BaseNodeConfig):
             help=
             'Whether to use your NVIDIA graphics card to accelerate the '
             'process.', existence=True))
-    lr: float = field(default=2e-5,
-                      metadata=dict(help='Learning rate during training.',
-                                    existence='train'))
-    batch_size: int = field(default=8,
-                            metadata=dict(help='Batch size.', existence=True))
-    load_model: Optional[str] = field(
-        default=None,
-        metadata=dict(help='Initialize the model with the saved parameters.',
-                      existence=True))
 
 
 class BaseTask(BaseNode):

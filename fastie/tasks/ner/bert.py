@@ -93,13 +93,16 @@ class Model(nn.Module):
             logits = F.softmax(
                 features[b][offset_mask[b].nonzero(), :].squeeze(1), dim=1)
             pred = logits.argmax(dim=1).to(features.device)
-            pred_list.append({
-                'tokens':
-                tokens[b],
-                'label': [self.tag_vocab.idx2word[int(i)] for i in pred],
-                'possibility': [round(float(i.max()), 3) for i in logits]
-            })
-        # 推理的结果一定是可 json 化的，建议 List[Dict]，比如这里输出了预测的标签和置信度
+            pred_dict = {}
+            pred_dict["tokens"] = tokens[b]
+            pred_dict["entity_mentions"] = []
+            for i in range(pred.shape[0]):
+                # if pred[i] != 0:
+                pred_dict["entity_mentions"].append(
+                    ([i], self.tag_vocab.idx2word[int(pred[i])],
+                     round(float(logits[i].max()), 3)))
+            pred_list.append(pred_dict)
+        # 推理的结果一定是可 json 化的，建议 List[Dict]，和输入的数据集的格式一致
         # 这里的结果是用户可读的，所以建议把 idx2label 存起来
         # 怎么存可以看一下下面 233 行
         return dict(pred=pred_list)
