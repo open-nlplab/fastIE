@@ -19,7 +19,8 @@ class InteractorConfig(BaseNodeConfig):
             'help':
             'What file to write the interactive log to. If this is not set, '
             'the log will not be written. ',
-            'existence': 'interact'
+            'existence':
+            'interact'
         })
 
 
@@ -40,9 +41,7 @@ class Interactor(BaseController):
                                                Sequence[str]]] = None):
         parameters_or_data = BaseController.run(self, parameters_or_data)
         if parameters_or_data is None:
-            print(
-                'Interacting tool do not allow task and dataset to be left '
-                'empty. '
-            )
+            print('Interacting tool do not allow task and dataset to be left '
+                  'empty. ')
             exit(1)
         return self.inference(parameters_or_data=parameters_or_data)

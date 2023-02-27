@@ -127,8 +127,7 @@ class ColumnNER(BaseDataset):
                         'Warning: Dictionaries generated from the dataset '
                         'are not the same as those in the provided preset,\n'
                         'and will be preferred to dictionaries generated from '
-                        'the dataset'
-                    )
+                        'the dataset')
             tag_vocab.from_dataset(tagged_datasets, field_name='tags')
             tag_vocab.index_dataset(tagged_datasets,
                                     field_name='tags',

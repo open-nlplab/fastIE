@@ -47,10 +47,8 @@ def parse_config():
         elif key == 'dataset':
             obj_cls = DATASET.get(global_config[key])
             if obj_cls is None:
-                print(
-                    f'The dataset `{global_config[key]}` you selected does '
-                    f'not exist. '
-                )
+                print(f'The dataset `{global_config[key]}` you selected does '
+                      f'not exist. ')
                 print('Here are the optional options: \n')
                 sys.argv.append('-d')
                 sys.argv.append('-l')
@@ -149,8 +147,7 @@ class CommandNode(BaseNode):
                         else:
                             print(
                                 f'The task type `{task}` you selected does not '
-                                f'exist. '
-                            )
+                                f'exist. ')
                             print(
                                 'You can only choose from `ner`, `ee`, or `re`. '
                             )
@@ -161,8 +158,7 @@ class CommandNode(BaseNode):
                         else:
                             print(
                                 f'The solution `{solution}` you selected does '
-                                f'not exist. '
-                            )
+                                f'not exist. ')
                             print('Here are the optional options: \n')
                             sys.argv.append('-t')
                             sys.argv.append('-l')
@@ -172,8 +168,7 @@ class CommandNode(BaseNode):
                         print(
                             f'You must specify both the task category and the '
                             f'specific solution, such as `ner/bert` instead of '
-                            f'`{values}`. '
-                        )
+                            f'`{values}`. ')
                         print('Here are the optional options: \n')
                         sys.argv.append('-t')
                         sys.argv.append('-l')
@@ -182,10 +177,8 @@ class CommandNode(BaseNode):
                 elif variable_name == 'dataset':
                     obj_cls = DATASET.get(values)
                     if obj_cls is None:
-                        print(
-                            f'The dataset `{values}` you selected does not '
-                            f'exist. '
-                        )
+                        print(f'The dataset `{values}` you selected does not '
+                              f'exist. ')
                         print('Here are the optional options: \n')
                         sys.argv.append('-d')
                         sys.argv.append('-l')
@@ -216,8 +209,7 @@ class CommandNode(BaseNode):
                     else:
                         print(
                             f'The config file `{values}` you selected does not '
-                            f'exist. '
-                        )
+                            f'exist. ')
                         print('Here are the optional options: \n')
                         sys.argv.append('-c')
                         sys.argv.append('-l')

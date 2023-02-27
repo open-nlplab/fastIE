@@ -37,36 +37,30 @@ class InferenceMetric(Metric):
             for sample in pred:
                 # 判断一下不同的格式
                 # 首先是 NER 小组约定的格式
-                if "entity_mentions" in sample.keys():
-                    print("tokens: ", " ".join(sample['tokens']))
-                    print("pred:   ",
-                          " ".join([sample['tokens'][i]
-                                    if i in sample['entity_mentions'][0][0]
-                                    else "".join(
-                              [" " for j in
-                               range(len(sample['tokens'][i]))])
-                                    for i in range(
-                                  len(sample['tokens']))]),
-                          f"  {sample['entity_mentions'][0][1]} -> "
-                          f"{sample['entity_mentions'][0][2]}"
-                          if len(sample['entity_mentions'][0]) == 3
-                          else f"  {sample['entity_mentions'][0][1]}"
-                          )
-                    if len(sample["entity_mentions"]) > 1:
-                        for entity_mention in sample["entity_mentions"][1:]:
-                            print("        ",
-                                  " ".join([sample['tokens'][i]
-                                            if i in entity_mention[0]
-                                            else "".join(
-                                      [" " for j in
-                                       range(len(sample['tokens'][i]))])
-                                            for i in range(
-                                          len(sample['tokens']))]),
-                                  f"  {entity_mention[1]} -> "
-                                  f"{entity_mention[2]}"
-                                  if len(entity_mention) == 3
-                                  else f"  {entity_mention[1]}"
-                                  )
+                if 'entity_mentions' in sample.keys():
+                    print('tokens: ', ' '.join(sample['tokens']))
+                    print(
+                        'pred:   ', ' '.join([
+                            sample['tokens'][i] if i
+                            in sample['entity_mentions'][0][0] else ''.join(
+                                [' ' for j in range(len(sample['tokens'][i]))])
+                            for i in range(len(sample['tokens']))
+                        ]), f"  {sample['entity_mentions'][0][1]} -> "
+                        f"{sample['entity_mentions'][0][2]}"
+                        if len(sample['entity_mentions'][0]) == 3 else
+                        f"  {sample['entity_mentions'][0][1]}")
+                    if len(sample['entity_mentions']) > 1:
+                        for entity_mention in sample['entity_mentions'][1:]:
+                            print(
+                                '        ', ' '.join([
+                                    sample['tokens'][i]
+                                    if i in entity_mention[0] else ''.join([
+                                        ' ' for j in range(
+                                            len(sample['tokens'][i]))
+                                    ]) for i in range(len(sample['tokens']))
+                                ]), f'  {entity_mention[1]} -> '
+                                f'{entity_mention[2]}' if len(entity_mention)
+                                == 3 else f'  {entity_mention[1]}')
                 else:
                     # TODO: 其他类型的格式，例如为关系抽取小组制定的格式
                     pass
@@ -92,8 +86,7 @@ class InferenceConfig(BaseNodeConfig):
     save_path: Optional[str] = field(
         default=None,
         metadata=dict(
-            help=
-            'The path to save the generated results. If not set, output to '
+            help='The path to save the generated results. If not set, output to '
             'the returned variable. ',
             existence=['infer']))
     verbose: bool = field(
@@ -120,13 +113,11 @@ class Inference(BaseController):
 
     def run(self,
             parameters_or_data: Optional[Union[dict, DataBundle, DataSet, str,
-            Sequence[str]]] = None):
+                                               Sequence[str]]] = None):
         parameters_or_data = BaseController.run(self, parameters_or_data)
         if parameters_or_data is None:
-            print(
-                'Inference tool do not allow task and dataset to be left '
-                'empty. '
-            )
+            print('Inference tool do not allow task and dataset to be left '
+                  'empty. ')
             exit(1)
         parameters_or_data['evaluate_fn'] = 'inference_step'
         # parameters_or_data["evaluate_batch_step_fn"] = generate_step_fn

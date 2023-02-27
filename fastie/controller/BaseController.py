@@ -24,7 +24,7 @@ class BaseController(BaseNode):
         if callable(parameters_or_data):
             parameters_or_data = parameters_or_data()
         if isinstance(parameters_or_data, dict) \
-                and "model" in parameters_or_data.keys():
+                and 'model' in parameters_or_data.keys():
             return parameters_or_data
         else:
             # 下面的是直接传入数据集的情况，需要根据 global_config 构建 task

@@ -61,10 +61,8 @@ class BaseDataset(BaseNode):
                                 f'cache/{self.__class__.__name__}/cache.pkl')
             object.__setattr__(
                 self, 'run',
-                cache_results(
-                    _cache_fp=
-                    f"{path}",
-                    _refresh=self.refresh_cache)(self.run))
+                cache_results(_cache_fp=f'{path}',
+                              _refresh=self.refresh_cache)(self.run))
         self._cache = value
 
     def run(self):

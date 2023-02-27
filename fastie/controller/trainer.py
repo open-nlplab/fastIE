@@ -28,10 +28,8 @@ class Trainer(BaseController):
                                                Sequence[str]]] = None):
         parameters_or_data = BaseController.run(self, parameters_or_data)
         if parameters_or_data is None:
-            print(
-                'Training tool do not allow task and dataset to be left '
-                'empty. '
-            )
+            print('Training tool do not allow task and dataset to be left '
+                  'empty. ')
             exit(1)
         trainer = FastNLP_Trainer(**parameters_or_data)
         trainer.run()

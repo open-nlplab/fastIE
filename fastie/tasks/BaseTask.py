@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Sequence, Union, Callable, Generator, Dict, Optional, Any
-from types import MethodType
+from typing import Sequence, Union, Callable, Generator, Dict
 
 from fastNLP.io import DataBundle
 
@@ -18,9 +17,9 @@ class BaseTaskConfig(BaseNodeConfig):
     cuda: bool = field(
         default=False,
         metadata=dict(
-            help=
-            'Whether to use your NVIDIA graphics card to accelerate the '
-            'process.', existence=True))
+            help='Whether to use your NVIDIA graphics card to accelerate the '
+            'process.',
+            existence=True))
 
 
 class BaseTask(BaseNode):
@@ -28,9 +27,6 @@ class BaseTask(BaseNode):
 
     Args:
         :cuda (bool)[train,evaluate,inference]=False: 是否使用显卡加速训练.
-        :batch_size (int)[train]=32: batch size.
-        :lr (float)[train]=2e-5: 学习率.
-        :load_model (str)[train,evaluate,inference]=None: 加载模型的路径.
     """
     _config = BaseTaskConfig()
 

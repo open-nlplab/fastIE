@@ -11,13 +11,11 @@ from fastie.dataset.BaseDataset import BaseDataset, DATASET, BaseDatasetConfig
 
 @dataclass
 class Conll2003Config(BaseDatasetConfig):
-    tag: str = field(
-        default='ner',
-        metadata=dict(
-            help=
-            'Which fields in the dataset you want to use. '
-            'Select among: ner, pos, chunk.',
-            existence=['train', 'evaluate']))
+    tag: str = field(default='ner',
+                     metadata=dict(
+                         help='Which fields in the dataset you want to use. '
+                         'Select among: ner, pos, chunk.',
+                         existence=['train', 'evaluate']))
 
 
 @DATASET.register_module('conll2003')

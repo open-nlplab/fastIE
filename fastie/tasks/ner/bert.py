@@ -94,11 +94,11 @@ class Model(nn.Module):
                 features[b][offset_mask[b].nonzero(), :].squeeze(1), dim=1)
             pred = logits.argmax(dim=1).to(features.device)
             pred_dict = {}
-            pred_dict["tokens"] = tokens[b]
-            pred_dict["entity_mentions"] = []
+            pred_dict['tokens'] = tokens[b]
+            pred_dict['entity_mentions'] = []
             for i in range(pred.shape[0]):
                 # if pred[i] != 0:
-                pred_dict["entity_mentions"].append(
+                pred_dict['entity_mentions'].append(
                     ([i], self.tag_vocab.idx2word[int(pred[i])],
                      round(float(logits[i].max()), 3)))
             pred_list.append(pred_dict)
@@ -113,8 +113,7 @@ class BertNERConfig(BaseTaskConfig):
     pretrained_model_name_or_path: str = field(
         default='bert-base-uncased',
         metadata=dict(
-            help=
-            'name of transformer model (see '
+            help='name of transformer model (see '
             'https://huggingface.co/transformers/pretrained_models.html for '
             'options).',
             existence=True))
@@ -126,8 +125,7 @@ class BertNERConfig(BaseTaskConfig):
 
 @NER.register_module('bert')
 class BertNER(BaseTask):
-    """用预训练模型 Bert 对 token 进行向量表征，然后通过 classification head 对每个
-    token 进行分类。"""
+    """用预训练模型 Bert 对 token 进行向量表征，然后通过 classification head 对每个 token 进行分类。"""
     # 必须在这里定义自己 config
     _config = BertNERConfig()
     # 帮助信息，会显示在命令行分组的帮助信息中
