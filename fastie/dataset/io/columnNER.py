@@ -31,13 +31,15 @@ class ColumnNERConfig(BaseDatasetConfig):
         default=' ',
         metadata=dict(
             help=
-            'The split char. If this parameter is not set, it is separated by space. ',
+            'The split char. If this parameter is not set, it is separated by '
+            'space. ',
             existence=True))
     skip_content: str = field(
         default=' ',
         metadata=dict(
             help=
-            'The content to skip. If this item is not set, it is divided by newline character. ',
+            'The content to skip. If this item is not set, it is divided by '
+            'newline character. ',
             existence=True))
 
 
@@ -122,8 +124,10 @@ class ColumnNER(BaseDataset):
             if 'vocabulary' in get_config().keys():
                 if get_config()['vocabulary'] != tag_vocab._word2idx:
                     print(
-                        'Warning: Dictionaries generated from the dataset are not the same as those in the provided preset,\n'
-                        'and will be preferred to dictionaries generated from the dataset'
+                        'Warning: Dictionaries generated from the dataset '
+                        'are not the same as those in the provided preset,\n'
+                        'and will be preferred to dictionaries generated from '
+                        'the dataset'
                     )
             tag_vocab.from_dataset(tagged_datasets, field_name='tags')
             tag_vocab.index_dataset(tagged_datasets,

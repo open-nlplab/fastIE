@@ -6,7 +6,8 @@ from typing import Sequence, Optional
 
 from fastie.controller import CONTROLLER, Interactor
 from fastie.dataset import DATASET
-from fastie.envs import set_flag, FASTIE_HOME, set_config, global_config, config_flag, parser, find_config
+from fastie.envs import set_flag, FASTIE_HOME, set_config, global_config, \
+    config_flag, parser, find_config
 from fastie.exhibition import Exhibition
 from fastie.tasks import NER, EE, RE
 from fastie.utils import Config
@@ -47,7 +48,8 @@ def parse_config():
             obj_cls = DATASET.get(global_config[key])
             if obj_cls is None:
                 print(
-                    f'The dataset `{global_config[key]}` you selected does not exist. '
+                    f'The dataset `{global_config[key]}` you selected does '
+                    f'not exist. '
                 )
                 print('Here are the optional options: \n')
                 sys.argv.append('-d')
@@ -69,7 +71,8 @@ class CommandNodeConfig(BaseNodeConfig):
         default='',
         metadata=dict(
             help=
-            'The task you want to use. Please use / to split the task and the specific solution.',
+            'The task you want to use. Please use / to split the task and the '
+            'specific solution.',
             existence=True,
             alias='-t'))
     dataset: str = field(default='',
@@ -145,7 +148,8 @@ class CommandNode(BaseNode):
                             obj_cls = RE.get(solution)
                         else:
                             print(
-                                f'The task type `{task}` you selected does not exist. '
+                                f'The task type `{task}` you selected does not '
+                                f'exist. '
                             )
                             print(
                                 'You can only choose from `ner`, `ee`, or `re`. '
@@ -156,7 +160,8 @@ class CommandNode(BaseNode):
                             _ = chain + obj
                         else:
                             print(
-                                f'The solution `{solution}` you selected does not exist. '
+                                f'The solution `{solution}` you selected does '
+                                f'not exist. '
                             )
                             print('Here are the optional options: \n')
                             sys.argv.append('-t')
@@ -165,7 +170,9 @@ class CommandNode(BaseNode):
                             exit(0)
                     else:
                         print(
-                            f'You must specify both the task category and the specific solution, such as `ner/bert` instead of `{values}`. '
+                            f'You must specify both the task category and the '
+                            f'specific solution, such as `ner/bert` instead of '
+                            f'`{values}`. '
                         )
                         print('Here are the optional options: \n')
                         sys.argv.append('-t')
@@ -176,7 +183,8 @@ class CommandNode(BaseNode):
                     obj_cls = DATASET.get(values)
                     if obj_cls is None:
                         print(
-                            f'The dataset `{values}` you selected does not exist. '
+                            f'The dataset `{values}` you selected does not '
+                            f'exist. '
                         )
                         print('Here are the optional options: \n')
                         sys.argv.append('-d')
@@ -207,7 +215,8 @@ class CommandNode(BaseNode):
                         set_config(config)
                     else:
                         print(
-                            f'The config file `{values}` you selected does not exist. '
+                            f'The config file `{values}` you selected does not '
+                            f'exist. '
                         )
                         print('Here are the optional options: \n')
                         sys.argv.append('-c')

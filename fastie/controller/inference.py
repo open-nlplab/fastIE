@@ -40,7 +40,8 @@ class InferenceMetric(Metric):
             for sample in pred:
                 for key, value in sample.items():
                     print(
-                        f"{key}: {' '.join(map(lambda x: f'{x}', list(value)))}\n"
+                        f"{key}: "
+                        f"{' '.join(map(lambda x: f'{x}', list(value)))}\n"
                     )
         self.result.extend(pred)
 
@@ -65,13 +66,15 @@ class InferenceConfig(BaseNodeConfig):
         default=None,
         metadata=dict(
             help=
-            'The path to save the generated results. If not set, output to the returned variable. ',
+            'The path to save the generated results. If not set, output to '
+            'the returned variable. ',
             existence=['infer']))
     verbose: bool = field(
         default=True,
         metadata=dict(
             help=
-            'Whether to output the contents of each inference. Multiple cards are not supported. ',
+            'Whether to output the contents of each inference. Multiple cards '
+            'are not supported. ',
             existence=['infer']))
 
 
@@ -94,7 +97,8 @@ class Inference(BaseController):
         parameters_or_data = BaseController.run(self, parameters_or_data)
         if parameters_or_data is None:
             print(
-                'Inference tool do not allow task and dataset to be left empty. '
+                'Inference tool do not allow task and dataset to be left '
+                'empty. '
             )
             exit(1)
         parameters_or_data['evaluate_fn'] = 'inference_step'
@@ -107,4 +111,4 @@ class Inference(BaseController):
         # setattr(evaluator, "generate_save_path", self.save_path)
         # setattr(evaluator, "generate_result", [])
         evaluator.run()
-        return inference_metric.result
+        return inference_metric.get_result()

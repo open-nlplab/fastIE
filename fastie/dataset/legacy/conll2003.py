@@ -15,7 +15,8 @@ class Conll2003Config(BaseDatasetConfig):
         default='ner',
         metadata=dict(
             help=
-            'Which fields in the dataset you want to use. Select among: ner, pos, chunk.',
+            'Which fields in the dataset you want to use. '
+            'Select among: ner, pos, chunk.',
             existence=['train', 'evaluate']))
 
 
@@ -24,17 +25,16 @@ class Conll2003(BaseDataset):
     """The shared task of CoNLL-2003 concerns language-independent named entity
     recognition."""
     _config = Conll2003Config()
-    _help = 'Legacy dataset: conll2003. Refer to https://huggingface.co/datasets/conll2003 for more information.'
+    _help = 'Legacy dataset: conll2003. Refer to ' \
+            'https://huggingface.co/datasets/conll2003 for more information.'
 
     def __init__(self,
                  tag: str = 'ner',
                  cache: bool = False,
                  refresh_cache: bool = False,
-                 tag_vocab: Union[Vocabulary, dict] = None,
                  **kwargs):
         super(Conll2003, self).__init__(cache=cache,
                                         refresh_cache=refresh_cache,
-                                        tag_vocab=tag_vocab,
                                         **kwargs)
         self.tag = tag
 

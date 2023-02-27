@@ -19,8 +19,8 @@ class BaseTaskConfig(BaseNodeConfig):
         default=False,
         metadata=dict(
             help=
-            'Whether to use your NVIDIA graphics card to accelerate the process.',
-            existence=True))
+            'Whether to use your NVIDIA graphics card to accelerate the '
+            'process.', existence=True))
     lr: float = field(default=2e-5,
                       metadata=dict(help='Learning rate during training.',
                                     existence='train'))

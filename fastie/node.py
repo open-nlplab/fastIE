@@ -7,8 +7,8 @@ from dataclasses import dataclass, MISSING
 from functools import reduce
 from typing import Callable, Union, Sequence, Optional, Dict
 
-from fastie.envs import parser as global_parser, get_flag, type_dict, global_config, \
-    parser_flag, set_config, config_flag, find_config
+from fastie.envs import parser as global_parser, get_flag, type_dict, \
+    global_config, parser_flag, set_config, config_flag, find_config
 from fastie.utils import Config
 
 

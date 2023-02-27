@@ -29,7 +29,8 @@ class Evaluator(BaseController):
         parameters_or_data = BaseController.run(self, parameters_or_data)
         if parameters_or_data is None:
             print(
-                'Evaluating tool do not allow task and dataset to be left empty. '
+                'Evaluating tool do not allow task and dataset to be left '
+                'empty. '
             )
             exit(1)
         evaluator = FastNLP_Evaluator(**parameters_or_data)

@@ -44,22 +44,10 @@ class BaseDataset(BaseNode):
     def __init__(self,
                  cache: bool = False,
                  refresh_cache: bool = False,
-                 tag_vocab: Union[Vocabulary, dict] = None,
                  **kwargs):
         BaseNode.__init__(self, **kwargs)
         self.refresh_cache: bool = refresh_cache
         self.cache: bool = cache
-        if tag_vocab is not None:
-            if isinstance(tag_vocab, dict):
-                if isinstance(list(tag_vocab.keys())[0], int):
-                    self.tag_vocab = {
-                        value: key
-                        for key, value in tag_vocab.items()
-                    }
-                elif isinstance(list(tag_vocab.keys())[0], str):
-                    self.tag_vocab = tag_vocab
-            elif isinstance(tag_vocab, Vocabulary):
-                self.tag_vocab = tag_vocab._word2idx
 
     @property
     def cache(self):
@@ -69,11 +57,13 @@ class BaseDataset(BaseNode):
     def cache(self, value: bool):
         if value:
             # 保存 cache 的位置默认为 `~/.fastie/cache/BaseDataset/cache.pkl`
+            path = os.path.join(FASTIE_HOME,
+                                f'cache/{self.__class__.__name__}/cache.pkl')
             object.__setattr__(
                 self, 'run',
                 cache_results(
                     _cache_fp=
-                    f"{os.path.join(FASTIE_HOME, f'cache/{self.__class__.__name__}/cache.pkl')}",
+                    f"{path}",
                     _refresh=self.refresh_cache)(self.run))
         self._cache = value
 

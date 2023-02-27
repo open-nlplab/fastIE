@@ -8,7 +8,8 @@ import torch.nn.functional as F
 from fastNLP import prepare_dataloader, Instance, Vocabulary
 from fastNLP.core.metrics import Accuracy
 from fastNLP.io import DataBundle
-from fastNLP.transformers.torch.models.bert import BertModel, BertConfig, BertTokenizer
+from fastNLP.transformers.torch.models.bert import BertModel, BertConfig, \
+    BertTokenizer
 from torch import nn
 
 from fastie.envs import get_flag
@@ -110,7 +111,9 @@ class BertNERConfig(BaseTaskConfig):
         default='bert-base-uncased',
         metadata=dict(
             help=
-            'name of transformer model (see https://huggingface.co/transformers/pretrained_models.html for options).',
+            'name of transformer model (see '
+            'https://huggingface.co/transformers/pretrained_models.html for '
+            'options).',
             existence=True))
     num_labels: int = field(default=9,
                             metadata=dict(
@@ -120,7 +123,8 @@ class BertNERConfig(BaseTaskConfig):
 
 @NER.register_module('bert')
 class BertNER(BaseTask):
-    """用预训练模型 Bert 对 token 进行向量表征，然后通过 classification head 对每个 token 进行分类。"""
+    """用预训练模型 Bert 对 token 进行向量表征，然后通过 classification head 对每个
+    token 进行分类。"""
     # 必须在这里定义自己 config
     _config = BertNERConfig()
     # 帮助信息，会显示在命令行分组的帮助信息中
@@ -151,7 +155,8 @@ class BertNER(BaseTask):
         self.load_model = load_model
 
     def run(self, data_bundle: DataBundle):
-        # 注意，接收的 data_bundle 可能有用来 infer 的，也就是说没有 label 信息，预处理的时候要注意
+        # 注意，接收的 data_bundle 可能有用来 infer 的，也就是说没有 label 信息，
+        # 预处理的时候要注意
         self.tokenizer = BertTokenizer.from_pretrained(
             # 对自己进行 getattr 优先级是首先从 global_config 取，
             # global_config 中没有这个值的话再从自己的 __dict__ 里面取
@@ -231,9 +236,10 @@ class BertNER(BaseTask):
         # 为了 infer 的时候能够使用，我们把 tag_vocab 存起来
         model = Model(self.pretrained_model_name_or_path, self.num_labels,
                       _tag_vocab)
-        # Vocabulary 这种复杂的数据类型是不会存到配置文件中的，所以把 dict 类型的 word2idx 存起来
-        # 对自己进行 setattr 会同时把这个变量存到 global_config 中，便于后续导出
-        # 前提条件：1. 是简答的数据类型，可以见 fastie.envs.type_dict，2. 变量名不以下划线开头
+        # Vocabulary 这种复杂的数据类型是不会存到配置文件中的，所以把 dict 类型的 word2idx
+        # 存起来对自己进行 setattr 会同时把这个变量存到 global_config 中，便于后续导出
+        # 前提条件：1. 是简单的数据类型，可以见 fastie.envs.type_dict，
+        # 2. 变量名不以下划线开头
         # 因此想要保存起来的东西就直接存到 self 中吧。
         self.tag_vocab = _tag_vocab._word2idx
         # 此外，global_config 中已经存在的变量，不允许修改
@@ -242,7 +248,8 @@ class BertNER(BaseTask):
         # self.var = 1 // 存到了 global_config 中
         # self.var = 2 // 没有任何作用
         metrics = {'accuracy': Accuracy()}
-        # 使用 get_flag 判断现在要进行的事情，可能的取值有 `train`, `eval`, `infer`, `interact`
+        # 使用 get_flag 判断现在要进行的事情，可能的取值有 `train`, `eval`, `infer`,
+        # `interact`
         if get_flag() == 'train':
             train_dataloader = prepare_dataloader(
                 data_bundle.get_dataset('train'),
@@ -264,18 +271,18 @@ class BertNER(BaseTask):
                 parameters = dict(model=model,
                                   optimizers=torch.optim.Adam(
                                       model.parameters(), lr=self.lr),
-                                  train_dataloader=train_dataloader,
-                                  metrics=metrics)
+                                  train_dataloader=train_dataloader)
         elif get_flag() == 'eval':
             evaluate_dataloader = prepare_dataloader(
-                data_bundle.get_dataset('valid'),
+                data_bundle.get_dataset('test'),
                 batch_size=self.batch_size,
                 shuffle=True)
             parameters = dict(model=model,
                               evaluate_dataloaders=evaluate_dataloader,
                               metrics=metrics)
         elif get_flag() == 'infer' or get_flag() == 'interact':
-            # 注意：infer 和 eval 其实并没有区别，只是把 evaluate_dataloaders 换成推理的数据集了；
+            # 注意：infer 和 eval 其实并没有区别，只是把 evaluate_dataloaders
+            # 换成推理的数据集了；
             # 我们不需要管怎么推理的，只要在模型里面写好 inference_step 就可以了
             # 目前推理和交互对于任务来说没有任何区别
             infer_dataloader = prepare_dataloader(
