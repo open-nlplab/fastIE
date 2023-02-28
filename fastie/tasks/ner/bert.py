@@ -31,6 +31,7 @@ class Model(nn.Module):
                 pretrained_model_name_or_path)
         else:
             self.bert = BertModel(BertConfig(**kwargs))
+        self.bert.requires_grad_(False)
         self.num_labels = num_labels
         self.classificationHead = nn.Linear(self._get_bert_embedding_dim(),
                                             num_labels)
@@ -50,9 +51,6 @@ class Model(nn.Module):
 
     def train_step(self, input_ids, attention_mask, offset_mask,
                    entity_mentions):
-        import os
-        if int(os.environ["LOCAL_RANK"]) == 1:
-            print(111)
         features = self.forward(input_ids, attention_mask)['features']
         loss = 0
         for b in range(features.shape[0]):

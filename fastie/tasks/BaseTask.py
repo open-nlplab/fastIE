@@ -73,6 +73,7 @@ class BaseTask(BaseNode):
                         base_parameters['device'] = 0
                     else:
                         base_parameters['device'] = 'cpu'
+                    parameters_or_data.update(base_parameters)
                 elif isinstance(self.cuda, Sequence) and isinstance(
                         self.cuda[0], int):
                     base_parameters['device'] = self.cuda
