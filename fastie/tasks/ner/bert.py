@@ -117,8 +117,8 @@ class BertNERConfig(BaseTaskConfig):
         default='bert-base-uncased',
         metadata=dict(
             help='name of transformer model (see '
-                 'https://huggingface.co/transformers/pretrained_models.html for '
-                 'options).',
+            'https://huggingface.co/transformers/pretrained_models.html for '
+            'options).',
             existence=True))
     num_labels: int = field(default=9,
                             metadata=dict(
@@ -141,12 +141,14 @@ class BertNER(BaseTask):
             lr: float = 2e-5,
             # 以下是父类的参数，也要复制过来，可以查看一下 BaseTask 参数
             cuda: Union[bool, int, Sequence[int]] = False,
-            load_model: str = "",
+            load_model: str = '',
             **kwargs):
         # 必须要把父类 （BaseTask）的参数也复制过来，否则用户没有父类的代码提示；
         # 在这里进行父类的初始化；
         # 父类的参数我们不需要进行任何操作，比如这里的 cuda 和 load_model，我们无视就可以了。
-        super(BertNER, self).__init__(cuda=cuda, load_model=load_model, **kwargs)
+        super(BertNER, self).__init__(cuda=cuda,
+                                      load_model=load_model,
+                                      **kwargs)
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         # __init__ 值用来初始化所有属性变量，不要进行任何耗时操作
         # 这里初始化的属性优先级是要比 global_config 低的
@@ -173,19 +175,21 @@ class BertNER(BaseTask):
         _tag_vocab = None
         # 如果存在标注数据
         # 则自动创建 tag 到 id 的映射
-        if "train" in data_bundle.datasets.keys() \
-                or "valid" in data_bundle.datasets.keys() \
-                or "test" in data_bundle.datasets.keys():
-            _tag_vocab = Vocabulary(padding=None, unknown=None)
+        if 'train' in data_bundle.datasets.keys() \
+                or 'valid' in data_bundle.datasets.keys() \
+                or 'test' in data_bundle.datasets.keys():
+
+            _tag_vocab: Vocabulary = Vocabulary(padding=None, unknown=None)
+
             def construct_vocab(instance: Instance):
                 # 当然，用来 infer 的数据集是无法构建的，这里判断一下
                 if 'entity_mentions' in instance.keys():
                     for entity_mention in instance['entity_mentions']:
                         _tag_vocab.add(entity_mention[1])
                 return instance
+
             data_bundle.apply_more(construct_vocab)
             self._num_labels = len(list(_tag_vocab.word2idx.keys()))
-
 
         # 下面是检验的过程，需要检验三种情况
         # 1. 没 load，也没法自动生成，证明没加载任何模型就要推理，直接报错
@@ -195,12 +199,12 @@ class BertNER(BaseTask):
         #   3.2 如果不是 train，那么就不用检验了，直接用加载的 self._tag2idx 就好
         if self._tag2idx is None and _tag_vocab is None:
             # 两个都是 None，无法推理
-            print("Unable to find a tag to id mapping. "
-                  "Make sure that the model you load is a fastie model. ")
+            print('Unable to find a tag to id mapping. '
+                  'Make sure that the model you load is a fastie model. ')
             exit(1)
         if self._tag2idx is not None and _tag_vocab is not None:
             # 两个都有
-            if get_flag() == "train": # 证明想用我们训练好的 checkpoint 继续在自己的数据上训练
+            if get_flag() == 'train':  # 证明想用我们训练好的 checkpoint 继续在自己的数据上训练
                 # 如果不是 train 的话可能只是想用我们的模型做推理，只不过没特意做 infer 数据集，想在 train 上推理
                 # 那就没必要报错了，直接用加载的 self._tag2idx 就好
                 if self._tag2idx != _tag_vocab.word2idx:
@@ -208,7 +212,10 @@ class BertNER(BaseTask):
                     # 如果 tag 都一样，只是 id 不一样，可能只是生成过程中的随机性导致的
                     if set(self._tag2idx.keys()) == _tag_vocab.word2idx.keys():
                         _tag_vocab._word2idx.update(self._tag2idx)
-                        _tag_vocab._idx2word.update({value: key for key, value in self._tag2idx.items()})
+                        _tag_vocab._idx2word.update({
+                            value: key
+                            for key, value in self._tag2idx.items()
+                        })
                     else:
                         # tag 文本都对不上
                         # 就直接不加载模型了
@@ -219,10 +226,9 @@ class BertNER(BaseTask):
             # 正常的推理流程须走这里
             _tag_vocab = Vocabulary(padding=None, unknown=None)
             _tag_vocab._word2idx.update(self._tag2idx)
-            _tag_vocab._idx2word.update({value: key for key, value in self._tag2idx.items()})
-
-
-
+            _tag_vocab._idx2word.update(
+                {value: key
+                 for key, value in self._tag2idx.items()})
 
         # 将 token 转换为 id，由于 bpe 会改变 token 的长度，所以除了 input_ids，
         # attention_mask 意外还返回了 offset_mask，input_ids 里面哪些是原来的 token
@@ -263,8 +269,10 @@ class BertNER(BaseTask):
 
         data_bundle.apply_more(tokenize)
         # 为了 infer 的时候能够使用，我们把 tag_vocab 存起来
-        self.model = Model(self.pretrained_model_name_or_path, self._num_labels,
-                      _tag_vocab)
+        self.model = Model(self.pretrained_model_name_or_path,
+                           self._num_labels, _tag_vocab)
+        if self._model_dict is not None:
+            self.model.load_state_dict(self._model_dict)
         # Vocabulary 这种复杂的数据类型是不会存到配置文件中的，所以把 dict 类型的 word2idx
         # 存起来对自己进行 setattr 会同时把这个变量存到 global_config 中，便于后续导出
         # 前提条件：1. 是简单的数据类型，可以见 fastie.envs.type_dict，

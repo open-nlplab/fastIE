@@ -22,22 +22,15 @@ class BaseTaskConfig(BaseNodeConfig):
         default=False,
         metadata=dict(
             help='Whether to use your NVIDIA graphics card to accelerate the '
-                 'process.',
+            'process.',
             existence=True))
     load_model: str = field(
-        default="",
-        metadata=dict(
-            help='Load the model from the path or model name. ',
-            existence=True
-        )
-    )
-    epochs: int = field(
-        default=20,
-        metadata=dict(
-            help="Total number of training epochs. ",
-            existence="train"
-        )
-    )
+        default='',
+        metadata=dict(help='Load the model from the path or model name. ',
+                      existence=True))
+    epochs: int = field(default=20,
+                        metadata=dict(help='Total number of training epochs. ',
+                                      existence='train'))
 
 
 class BaseTask(BaseNode):
@@ -50,7 +43,7 @@ class BaseTask(BaseNode):
 
     def __init__(self,
                  cuda: Union[bool, int, Sequence[int]] = False,
-                 load_model: str = "",
+                 load_model: str = '',
                  epochs: int = 20,
                  **kwargs):
         BaseNode.__init__(self, **kwargs)
@@ -64,10 +57,12 @@ class BaseTask(BaseNode):
 
         def run(data_bundle: DataBundle):
 
-            if self.load_model != "":
-                if hasattr(self, "load_state_dict"):
+            if self.load_model != '':
+                if hasattr(self, 'load_state_dict'):
                     self.load_state_dict(Hub.load(self.load_model))
-            def after_run_callback(run_func: Callable, data_bundle: DataBundle):
+
+            def after_run_callback(run_func: Callable,
+                                   data_bundle: DataBundle):
                 # 主要作用是增加参数
                 parameters_or_data: dict = run_func(data_bundle)
                 base_parameters: Dict[str, Union[int, str, Sequence]] = dict()
@@ -82,14 +77,14 @@ class BaseTask(BaseNode):
                         self.cuda[0], int):
                     base_parameters['device'] = self.cuda
                     parameters_or_data.update(base_parameters)
-                if self.load_model != "":
-                    if not self.hasattr("load_state_dict"):
-                        parameters_or_data["model"].\
+                if self.load_model != '':
+                    if not hasattr(self, 'load_state_dict'):
+                        parameters_or_data['model'].\
                             load_state_dict(Hub.load(self.load_model))
-                if hasattr(self, "state_dict"):
-                    setattr(parameters_or_data["model"],
-                            "fastie_state_dict", self.state_dict)
-                parameters_or_data["n_epochs"] = self.epochs
+                if hasattr(self, 'state_dict'):
+                    setattr(parameters_or_data['model'], 'fastie_state_dict',
+                            self.state_dict)
+                parameters_or_data['n_epochs'] = self.epochs
                 return parameters_or_data
 
             if get_flag() is None:

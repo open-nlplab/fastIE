@@ -20,7 +20,7 @@ def build_dataset(
     else:
         if isinstance(dataset, str) or isinstance(dataset, Sequence) \
                 and isinstance(dataset[0], str):
-            data_bundle = Sentence(dataset)() # type: ignore [arg-type]
+            data_bundle = Sentence(dataset)()  # type: ignore [arg-type]
         if isinstance(dataset, dict):
             dataset = [dataset]
         if isinstance(dataset, Sequence) and isinstance(dataset[0], dict):
