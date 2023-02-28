@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*- 
 from dataclasses import dataclass, field
 from typing import Union, Sequence, Optional
 

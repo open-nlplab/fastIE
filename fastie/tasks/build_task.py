@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*- 
 from fastie.tasks import NER, RE, EE
 from fastie.envs import global_config, set_config
 from fastie.node import BaseNodeConfig

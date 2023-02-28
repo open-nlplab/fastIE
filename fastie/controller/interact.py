@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*- 
 from fastie.controller.BaseController import BaseController, CONTROLLER
 from fastie.controller.inference import Inference
 from fastie.node import BaseNodeConfig

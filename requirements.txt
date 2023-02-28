@@ -1,12 +1,1 @@
-addict~=2.4.0
-datasets~=2.9.0
-defaultlist~=1.0.0
-FastNLP~=1.0.0
-importlib~=1.0.4
-numpy~=1.23.5
-regex~=2022.7.9
-requests~=2.28.1
-setuptools~=63.4.1
-texttable~=1.6.7
-torch~=1.13.0
-yapf~=0.32.0
+

@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*- 
 from fastie.dataset.BaseDataset import DATASET
 from fastie.dataset.io.sentence import Sentence
 from fastie.envs import get_config, get_flag
@@ -14,8 +15,8 @@ def build_dataset(
 ) -> DataBundle:
     data_bundle = DataBundle()
     if dataset is None:
-        if 'dataset' not in get_config().keys():
-            data_bundle = DATASET.get(get_config()['dataset'])()
+        if 'dataset' in get_config().keys():
+            data_bundle = DATASET.get(get_config()['dataset'])()()
     else:
         if isinstance(dataset, str) or isinstance(dataset, Sequence) \
                 and isinstance(dataset[0], str):

@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*- 
 import json
 from dataclasses import dataclass
 from dataclasses import field

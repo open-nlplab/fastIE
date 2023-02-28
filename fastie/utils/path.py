@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*- 
 # Copyright (c) OpenMMLab. All rights reserved.
 import os
 import os.path as osp

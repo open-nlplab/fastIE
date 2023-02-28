@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*- 
 from fastie.node import BaseNode, BaseNodeConfig
 from fastie.utils import Registry
 from fastie.tasks import build_task

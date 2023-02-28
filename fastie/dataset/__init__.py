@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*- 
 from .BaseDataset import BaseDataset, DATASET, BaseDatasetConfig
 
 from .legacy import Conll2003, Conll2003Config

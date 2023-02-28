@@ -1,5 +1,7 @@
+# -*- coding: UTF-8 -*- 
 from dataclasses import dataclass, field
 from functools import reduce
+from io import BytesIO
 from typing import Union, Sequence, Optional
 
 import numpy as np
@@ -34,6 +36,7 @@ class Model(nn.Module):
                                             num_labels)
         # 为了推理过程中能输出人类可读的结果，把 tag2label 也传进来
         self.tag_vocab = tag_vocab
+        print(1)
 
     def _get_bert_embedding_dim(self):
         with torch.no_grad():
@@ -114,8 +117,8 @@ class BertNERConfig(BaseTaskConfig):
         default='bert-base-uncased',
         metadata=dict(
             help='name of transformer model (see '
-            'https://huggingface.co/transformers/pretrained_models.html for '
-            'options).',
+                 'https://huggingface.co/transformers/pretrained_models.html for '
+                 'options).',
             existence=True))
     num_labels: int = field(default=9,
                             metadata=dict(
@@ -134,26 +137,30 @@ class BertNER(BaseTask):
     def __init__(
             self,
             pretrained_model_name_or_path: str = 'bert-base-uncased',
-            num_labels: int = 9,
-            tag_vocab: Union[dict, Vocabulary] = None,
             batch_size: int = 32,
             lr: float = 2e-5,
-            load_model: Optional[str] = None,
             # 以下是父类的参数，也要复制过来，可以查看一下 BaseTask 参数
             cuda: Union[bool, int, Sequence[int]] = False,
+            load_model: str = "",
             **kwargs):
         # 必须要把父类 （BaseTask）的参数也复制过来，否则用户没有父类的代码提示；
         # 在这里进行父类的初始化；
-        # 父类的参数我们不需要进行任何操作，比如这里的 cuda，我们无视就可以了。
-        super(BertNER, self).__init__(cuda=cuda, **kwargs)
+        # 父类的参数我们不需要进行任何操作，比如这里的 cuda 和 load_model，我们无视就可以了。
+        super(BertNER, self).__init__(cuda=cuda, load_model=load_model, **kwargs)
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         # __init__ 值用来初始化所有属性变量，不要进行任何耗时操作
         # 这里初始化的属性优先级是要比 global_config 低的
-        self.num_labels = num_labels
-        self.tag_vocab = tag_vocab
         self.batch_size = batch_size
         self.lr = lr
         self.load_model = load_model
+
+        # 存储模型时要额外存的隐属性
+        # 只存 model 权重的不用这些东西，save 和 load 函数也不用写
+        # 建议保存简单的数据结构，比如这里的 tag2idx 保存的是个 dict 而不是 Vocabulary
+        # 注意额外的参数，如果不想暴露给用户的话，变量名要以下划线开头
+        self._tag2idx = None
+        self._num_labels = None
+        self._model_dict = None
 
     def run(self, data_bundle: DataBundle):
         # 注意，接收的 data_bundle 可能有用来 infer 的，也就是说没有 label 信息，
@@ -162,39 +169,60 @@ class BertNER(BaseTask):
             # 对自己进行 getattr 优先级是首先从 global_config 取，
             # global_config 中没有这个值的话再从自己的 __dict__ 里面取
             self.pretrained_model_name_or_path)
-        _tag_vocab = Vocabulary(padding=None, unknown=None)
-        # 允许用户传入自己的 tag2idx 字典，允许多种格式
-        if self.tag_vocab is not None:
-            if isinstance(self.tag_vocab, dict) and isinstance(
-                    list(self.tag_vocab.keys())[0], str):
-                _tag_vocab._word2idx = self.tag_vocab
-                _tag_vocab._idx2word = {
-                    v: k
-                    for k, v in self.tag_vocab.items()
-                }
-            elif isinstance(self.tag_vocab, dict) and isinstance(
-                    list(self.tag_vocab.keys())[0], int):
-                _tag_vocab._idx2word = self.tag_vocab
-                _tag_vocab._word2idx = {
-                    v: k
-                    for k, v in self.tag_vocab.items()
-                }
-            elif isinstance(self.tag_vocab, list):
-                _tag_vocab.from_dataset(*data_bundle.datasets.values(),
-                                        field_name='target')
-            else:
-                self.tag_vocab = None
-        # 如果用户不传入 tag2idx 字典，那么我们自己构建
-        if self.tag_vocab is None:
-
+        # _tag_vocab 为自动生成的 tag vocab
+        _tag_vocab = None
+        # 如果存在标注数据
+        # 则自动创建 tag 到 id 的映射
+        if "train" in data_bundle.datasets.keys() \
+                or "valid" in data_bundle.datasets.keys() \
+                or "test" in data_bundle.datasets.keys():
+            _tag_vocab = Vocabulary(padding=None, unknown=None)
             def construct_vocab(instance: Instance):
-                # 当然，用来 infer 的数据集是无法构建的，这里判断以下
+                # 当然，用来 infer 的数据集是无法构建的，这里判断一下
                 if 'entity_mentions' in instance.keys():
                     for entity_mention in instance['entity_mentions']:
                         _tag_vocab.add(entity_mention[1])
                 return instance
-
             data_bundle.apply_more(construct_vocab)
+            self._num_labels = len(list(_tag_vocab.word2idx.keys()))
+
+
+        # 下面是检验的过程，需要检验三种情况
+        # 1. 没 load，也没法自动生成，证明没加载任何模型就要推理，直接报错
+        # 2. load 了，没法自动生成，这是 infer 的正常流程
+        # 3. load 了，也能自动生成，证明用训练集 infer 或者接着 train，这里要检验一下
+        #   3.1 如果是 train，那么就要检验一下 tag_vocab 是否一致，不一致要判断是否是生成过程中的随机性导致的
+        #   3.2 如果不是 train，那么就不用检验了，直接用加载的 self._tag2idx 就好
+        if self._tag2idx is None and _tag_vocab is None:
+            # 两个都是 None，无法推理
+            print("Unable to find a tag to id mapping. "
+                  "Make sure that the model you load is a fastie model. ")
+            exit(1)
+        if self._tag2idx is not None and _tag_vocab is not None:
+            # 两个都有
+            if get_flag() == "train": # 证明想用我们训练好的 checkpoint 继续在自己的数据上训练
+                # 如果不是 train 的话可能只是想用我们的模型做推理，只不过没特意做 infer 数据集，想在 train 上推理
+                # 那就没必要报错了，直接用加载的 self._tag2idx 就好
+                if self._tag2idx != _tag_vocab.word2idx:
+                    # 这里可以分情况再讨论一下
+                    # 如果 tag 都一样，只是 id 不一样，可能只是生成过程中的随机性导致的
+                    if set(self._tag2idx.keys()) == _tag_vocab.word2idx.keys():
+                        _tag_vocab._word2idx.update(self._tag2idx)
+                        _tag_vocab._idx2word.update({value: key for key, value in self._tag2idx.items()})
+                    else:
+                        # tag 文本都对不上
+                        # 就直接不加载模型了
+                        self._tag2idx = None
+                        self._num_labels = None
+                        self._model_dict = None
+        if self._tag2idx is not None and _tag_vocab is None:
+            # 正常的推理流程须走这里
+            _tag_vocab = Vocabulary(padding=None, unknown=None)
+            _tag_vocab._word2idx.update(self._tag2idx)
+            _tag_vocab._idx2word.update({value: key for key, value in self._tag2idx.items()})
+
+
+
 
         # 将 token 转换为 id，由于 bpe 会改变 token 的长度，所以除了 input_ids，
         # attention_mask 意外还返回了 offset_mask，input_ids 里面哪些是原来的 token
@@ -235,7 +263,7 @@ class BertNER(BaseTask):
 
         data_bundle.apply_more(tokenize)
         # 为了 infer 的时候能够使用，我们把 tag_vocab 存起来
-        model = Model(self.pretrained_model_name_or_path, self.num_labels,
+        self.model = Model(self.pretrained_model_name_or_path, self._num_labels,
                       _tag_vocab)
         # Vocabulary 这种复杂的数据类型是不会存到配置文件中的，所以把 dict 类型的 word2idx
         # 存起来对自己进行 setattr 会同时把这个变量存到 global_config 中，便于后续导出
@@ -262,23 +290,23 @@ class BertNER(BaseTask):
                     data_bundle.get_dataset('valid'),
                     batch_size=self.batch_size,
                     shuffle=True)
-                parameters = dict(model=model,
+                parameters = dict(model=self.model,
                                   optimizers=torch.optim.Adam(
-                                      model.parameters(), lr=self.lr),
+                                      self.model.parameters(), lr=self.lr),
                                   train_dataloader=train_dataloader,
                                   evaluate_dataloaders=evaluate_dataloader,
                                   metrics=metrics)
             else:
-                parameters = dict(model=model,
+                parameters = dict(model=self.model,
                                   optimizers=torch.optim.Adam(
-                                      model.parameters(), lr=self.lr),
+                                      self.model.parameters(), lr=self.lr),
                                   train_dataloader=train_dataloader)
         elif get_flag() == 'eval':
             evaluate_dataloader = prepare_dataloader(
                 data_bundle.get_dataset('test'),
                 batch_size=self.batch_size,
                 shuffle=True)
-            parameters = dict(model=model,
+            parameters = dict(model=self.model,
                               evaluate_dataloaders=evaluate_dataloader,
                               metrics=metrics)
         elif get_flag() == 'infer' or get_flag() == 'interact':
@@ -290,7 +318,28 @@ class BertNER(BaseTask):
                 data_bundle.get_dataset('infer'),
                 batch_size=self.batch_size,
                 shuffle=True)
-            parameters = dict(model=model,
+            parameters = dict(model=self.model,
                               evaluate_dataloaders=infer_dataloader,
                               driver='torch')
         return parameters
+
+    # 自己有额外的数据需要存的话就要额外在自己的 task 类加上 state_dict 和 load_state_dict 方法
+    # 否则只会存和读取 model 的 state_dict
+    def state_dict(self) -> dict:
+        return {
+            'model': self.model.state_dict(),
+            'tag2idx': self._tag2idx,
+            'num_labels': self._num_labels
+        }
+
+    # 因为 checkpoint 里面的额外变量会影响到模型结构
+    # 比如这里的 num_labels 会影响全连接层的输出维度
+    # 因此没有自动进行的可行性，把这些因变量输入进来后自己判断吧
+    # 比如 self._num_labels 为 None 的话就去找 train 数据集自动判断
+    # 不为 None 检验一下和自动生成的是否一致
+    # 注意额外的参数，如果不想暴露给用户的话，变量名要以下划线开头
+    # 注意：task 里面的 load_state_dict 调用时机是 __init__ 阶段
+    def load_state_dict(self, state_dict: dict):
+        self._tag2idx = state_dict['tag2idx']
+        self._num_labels = state_dict['num_labels']
+        self._model_dict = state_dict['model']
