@@ -73,11 +73,9 @@ class BaseTask(BaseNode):
                         base_parameters['device'] = 0
                     else:
                         base_parameters['device'] = 'cpu'
-                    parameters_or_data.update(base_parameters)
                 elif isinstance(self.cuda, Sequence) and isinstance(
                         self.cuda[0], int):
                     base_parameters['device'] = self.cuda
-                    parameters_or_data.update(base_parameters)
                 if self.load_model != '':
                     if not hasattr(self, 'load_state_dict'):
                         parameters_or_data['model'].\
@@ -85,7 +83,8 @@ class BaseTask(BaseNode):
                 if hasattr(self, 'state_dict'):
                     setattr(parameters_or_data['model'], 'fastie_state_dict',
                             self.state_dict)
-                parameters_or_data['n_epochs'] = self.epochs
+                base_parameters['n_epochs'] = self.epochs
+                parameters_or_data.update(base_parameters)
                 return parameters_or_data
 
             if get_flag() is None:
