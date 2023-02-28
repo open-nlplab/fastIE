@@ -210,7 +210,7 @@ class BertNER(BaseTask):
                 if self._tag2idx != _tag_vocab.word2idx:
                     # 这里可以分情况再讨论一下
                     # 如果 tag 都一样，只是 id 不一样，可能只是生成过程中的随机性导致的
-                    if set(self._tag2idx.keys()) == _tag_vocab.word2idx.keys():
+                    if set(self._tag2idx.keys()) == set(_tag_vocab.word2idx.keys()):
                         _tag_vocab._word2idx.update(self._tag2idx)
                         _tag_vocab._idx2word.update({
                             value: key
