@@ -138,7 +138,7 @@ class Conll2003(BaseDataset):
                 idx2tag['ner'][i] = list(
                     tag2idx['ner'].keys())[i].split('-')[1]
         for split, dataset in raw_dataset.items():
-            split = split.replace('validation', 'valid')
+            split = split.replace('validation', 'dev')
             datasets[split] = DataSet()
             for sample in dataset:
                 instance = Instance()

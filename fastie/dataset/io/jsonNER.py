@@ -17,7 +17,7 @@ class JsonNERConfig(BaseDatasetConfig):
         default='',
         metadata=dict(help='The folder where the data set resides. '
                       'We will automatically read the possible train.json, '
-                      'valid.json, test.json and infer.json in it. ',
+                      'dev.json, test.json and infer.json in it. ',
                       existence=True))
     right_inclusive: bool = field(
         default=True,
@@ -90,7 +90,7 @@ class JsonNER(BaseDataset):
 
         data_bundle = JsonNERLoader().load({
             file: os.path.exists(os.path.join(self.folder, f'{file}.json'))
-            for file in ('train', 'valid', 'test', 'infer')
+            for file in ('train', 'dev', 'test', 'infer')
             if os.path.exists(os.path.join(self.folder, f'{file}.json'))
         })
         self.tag_vocab = vocabulary._word2idx

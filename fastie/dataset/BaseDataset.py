@@ -1,8 +1,6 @@
 # -*- coding: UTF-8 -*- 
 import os
 from dataclasses import dataclass, field
-from types import MethodType
-from typing import Union
 
 from fastNLP import Vocabulary, cache_results
 

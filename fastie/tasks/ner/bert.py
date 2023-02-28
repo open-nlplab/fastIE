@@ -176,7 +176,7 @@ class BertNER(BaseTask):
         # 如果存在标注数据
         # 则自动创建 tag 到 id 的映射
         if 'train' in data_bundle.datasets.keys() \
-                or 'valid' in data_bundle.datasets.keys() \
+                or 'dev' in data_bundle.datasets.keys() \
                 or 'test' in data_bundle.datasets.keys():
 
             _tag_vocab: Vocabulary = Vocabulary(padding=None, unknown=None)
@@ -293,9 +293,9 @@ class BertNER(BaseTask):
                 batch_size=self.batch_size,
                 shuffle=True)
             # 用户不一定需要验证集，所以这里要判断一下
-            if 'valid' in data_bundle.datasets.keys():
+            if 'dev' in data_bundle.datasets.keys():
                 evaluate_dataloader = prepare_dataloader(
-                    data_bundle.get_dataset('valid'),
+                    data_bundle.get_dataset('dev'),
                     batch_size=self.batch_size,
                     shuffle=True)
                 parameters = dict(model=self.model,

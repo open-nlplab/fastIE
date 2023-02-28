@@ -20,7 +20,7 @@ class ColumnNERConfig(BaseDatasetConfig):
         default='',
         metadata=dict(help='The folder where the data set resides. \n'
                       'We will automatically read the possible train.txt, \n'
-                      'valid.txt, test.txt and infer.txt in it. ',
+                      'dev.txt, test.txt and infer.txt in it. ',
                       existence=True))
     token_index: int = field(default=0,
                              metadata=dict(help='The index of tokens.',
@@ -113,7 +113,7 @@ class ColumnNER(BaseDataset):
 
         data_bundle = ColumnNERLoader().load({
             file: os.path.exists(os.path.join(self.folder, f'{file}.txt'))
-            for file in ('train', 'valid', 'test', 'generate')
+            for file in ('train', 'dev', 'test', 'generate')
             if os.path.exists(os.path.join(self.folder, f'{file}.txt'))
         })
         tagged_datasets = {
