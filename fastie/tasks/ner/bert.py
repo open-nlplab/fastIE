@@ -50,6 +50,9 @@ class Model(nn.Module):
 
     def train_step(self, input_ids, attention_mask, offset_mask,
                    entity_mentions):
+        import os
+        if int(os.environ["LOCAL_RANK"]) == 1:
+            print(111)
         features = self.forward(input_ids, attention_mask)['features']
         loss = 0
         for b in range(features.shape[0]):
@@ -146,12 +149,14 @@ class BertNER(BaseTask):
             # 以下是父类的参数，也要复制过来，可以查看一下 BaseTask 参数
             cuda: Union[bool, int, Sequence[int]] = False,
             load_model: str = '',
+            epochs: int = 20,
             **kwargs):
         # 必须要把父类 （BaseTask）的参数也复制过来，否则用户没有父类的代码提示；
         # 在这里进行父类的初始化；
         # 父类的参数我们不需要进行任何操作，比如这里的 cuda 和 load_model，我们无视就可以了。
         super(BertNER, self).__init__(cuda=cuda,
                                       load_model=load_model,
+                                      epochs=epochs,
                                       **kwargs)
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         # __init__ 值用来初始化所有属性变量，不要进行任何耗时操作

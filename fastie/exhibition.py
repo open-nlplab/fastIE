@@ -11,6 +11,9 @@ from fastie.utils import Config
 
 
 class Exhibition:
+    """
+    展示模块
+    """
 
     @property
     def NER(self):

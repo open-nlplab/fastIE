@@ -3,6 +3,7 @@ import inspect
 import os
 import re
 import zipfile
+import argparse
 from argparse import ArgumentParser, Namespace, Action
 from dataclasses import dataclass, MISSING
 from functools import reduce
@@ -15,12 +16,26 @@ from fastie.utils import Config
 
 @dataclass
 class BaseNodeConfig:
+    """
+    ``fastie`` 节点配置基类
+    """
 
     def parse(self, obj: object):
+        """
+        将当前对象的属性值赋值给obj
+
+        :param obj: 任意对象
+        :return:
+        """
         for key, value in self.__dict__.items():
             setattr(obj, key, value)
 
     def to_dict(self) -> dict:
+        """
+        将当前对象转换为字典
+
+        :return:
+        """
         fields = dict()
         for field_name, field_value in self.__class__.__dict__[
                 '__dataclass_fields__'].items():
@@ -34,6 +49,12 @@ class BaseNodeConfig:
 
     @classmethod
     def from_dict(cls, _config: dict):
+        """
+        从字典中创建配置
+
+        :param _config: ``dict`` 类型的配置
+        :return: :class:`BaseNodeConfig` 类型的配置
+        """
         config = cls()
         for key in config.__dir__():
             if not key.startswith('_') and key in _config.keys():
@@ -41,28 +62,42 @@ class BaseNodeConfig:
         return config
 
     def keys(self):
+        """
+        获取当前配置的所有属性名
+
+        :return: ``list`` 类型的属性名列表
+        """
         return [key for key in self.__dir__() if not key.startswith('_')]
 
     def __getitem__(self, item):
+        """
+        通过 ``[]`` 获取属性值
+
+        :param item: 属性名
+        :return: 属性值
+        """
         return getattr(self, item)
 
 
 class BaseNode(object):
-    """节点基类.
-
-    继承该类的对象可以从命令行参数中获取值改变属性
+    """
+    ``fastie`` 节点基类
     """
     _config = BaseNodeConfig()
     _help = 'The base class of all node objects'
-    _inited = False
 
     def __init__(self, **kwargs):
-        self._inited = True
         self._parser = global_parser.add_argument_group(
             title=getattr(self, '_help'))
 
     @classmethod
     def from_config(cls, config: Union[BaseNodeConfig, str]):
+        """
+        从配置文件或配置对象中创建节点
+
+        :param config: 可以为 ``*.py`` 文件路径或者 :class:`BaseNodeConfig` 类型的对象
+        :return: :class:`BaseNode` 类型的节点
+        """
         node = cls()
         if isinstance(config, str):
             # 用户自己提供的配置文件
@@ -119,7 +154,11 @@ class BaseNode(object):
 
     @property
     def parser(self):
+        """
+        根据当前节点的配置类构造当前节点的 ``argparse`` 解析器
 
+        :return: :class:`argparse.ArgumentParser` 类型的解析器
+        """
         def inspect_all_bases(cls: type):
             if cls == object:
                 return
@@ -191,9 +230,12 @@ class BaseNode(object):
         return self._parser
 
     @property
-    def action(self):
+    def action(self) -> argparse.Action:
+        """
+        根据当前节点的配置类构造当前节点的 ``argparse`` 解析器的 ``action`` 参数
+        :return: :class:`argparse.Action` 类型的 ``action`` 参数
+        """
         node = self
-
         class ParseAction(Action):
 
             def __call__(self,
@@ -247,6 +289,15 @@ class BaseNode(object):
 
     @property
     def comments(self) -> dict:
+        """
+        获取当前节点的注释信息
+
+        .. warning::
+
+            该方法已废弃
+
+        :return:
+        """
         comments = {}
 
         def inspect_all_bases(cls: type):
@@ -290,6 +341,14 @@ class BaseNode(object):
 
     @property
     def description(self):
+        """
+        获取当前节点注释中的描述信息
+
+        .. warning::
+            该方法已废弃
+
+        :return:
+        """
         code_path = inspect.getfile(self.__class__)
         try:
             with open(file=inspect.getfile(self.__class__), mode='r') as file:
@@ -305,7 +364,11 @@ class BaseNode(object):
                 return lines[index].replace('"""', '').strip()
 
     @property
-    def fields(self):
+    def fields(self) -> dict:
+        """
+        获取当前节点配置类的所有字段
+        :return: ``dict`` 类型的字段信息
+        """
         fields: Dict[str, dict] = dict()
         for key in self.__dir__():
             if isinstance(object.__getattribute__(self, key), BaseNodeConfig):

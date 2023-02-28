@@ -90,7 +90,8 @@ class BaseTask(BaseNode):
             if get_flag() is None:
                 raise ValueError('You should set the flag first.')
             else:
-                yield after_run_callback(run_func, data_bundle)
+                while True:
+                    yield after_run_callback(run_func, data_bundle)
 
         return run
 
