@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 # Copyright (c) OpenMMLab. All rights reserved.
 import ast
 import copy

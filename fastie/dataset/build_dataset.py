@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 from fastie.dataset.BaseDataset import DATASET
 from fastie.dataset.io.sentence import Sentence
 from fastie.envs import get_config, get_flag

@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 from fastie.node import BaseNode
 from fastie.utils import Registry
 from fastie.tasks import build_task
@@ -9,8 +8,8 @@ from fastNLP.io import DataBundle
 
 from typing import Union, Sequence, Generator, Optional
 
-
 CONTROLLER = Registry('CONTROLLER')
+
 
 class BaseController(BaseNode):
 

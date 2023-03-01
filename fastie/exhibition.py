@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 import sys
 import os
 
@@ -11,9 +10,7 @@ from fastie.utils import Config
 
 
 class Exhibition:
-    """
-    展示模块
-    """
+    """展示模块."""
 
     @property
     def NER(self):

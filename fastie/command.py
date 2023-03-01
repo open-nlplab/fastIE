@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 import os
 import sys
 from argparse import ArgumentParser, Namespace, Action

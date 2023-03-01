@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 from defaultlist import defaultlist
 
 from fastie.controller import BaseController

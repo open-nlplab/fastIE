@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 import os
 from dataclasses import dataclass, field
 

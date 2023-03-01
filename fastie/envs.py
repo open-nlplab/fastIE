@@ -1,8 +1,6 @@
-# -*- coding: UTF-8 -*- 
 import os
 from argparse import ArgumentParser
 from functools import reduce
-
 
 parser: ArgumentParser = ArgumentParser(prog='fastie-train',
                                         conflict_handler='resolve')
@@ -36,9 +34,6 @@ type_dict = {
 }
 
 global_config: dict = dict()
-
-
-
 
 
 def get_config():

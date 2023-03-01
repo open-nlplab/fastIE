@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 from dataclasses import dataclass, field
 from functools import reduce
 from typing import Union, Sequence, Optional
@@ -104,11 +103,10 @@ class Model(nn.Module):
                 if self.tag_vocab is not None:
                     pred_dict['entity_mentions'].append(
                         ([i], self.tag_vocab.idx2word[int(pred[i])],
-                        round(float(logits[i].max()), 3)))
+                         round(float(logits[i].max()), 3)))
                 else:
                     pred_dict['entity_mentions'].append(
-                        ([i], int(pred[i]),
-                         round(float(logits[i].max()), 3)))
+                        ([i], int(pred[i]), round(float(logits[i].max()), 3)))
             pred_list.append(pred_dict)
         # 推理的结果一定是可 json 化的，建议 List[Dict]，和输入的数据集的格式一致
         # 这里的结果是用户可读的，所以建议把 idx2label 存起来
@@ -179,7 +177,8 @@ class BertNER(BaseTask):
             self.pretrained_model_name_or_path)
 
         tag_vocab = generate_tag_vocab(data_bundle)
-        signal, tag_vocab = check_loaded_tag_vocab(self._loaded_tag_vocab, tag_vocab)
+        signal, tag_vocab = check_loaded_tag_vocab(self._loaded_tag_vocab,
+                                                   tag_vocab)
         if signal == 0:
             # 信号为 0 表示抛弃加载模型
             self._loaded_tag_vocab = None

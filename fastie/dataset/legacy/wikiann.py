@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 """这个类还没写好，请勿参考."""
 
 from dataclasses import dataclass, field

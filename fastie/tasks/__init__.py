@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 from .BaseTask import BaseTask, BaseTaskConfig, NER, RE, EE
 
 from .ner import BertNER, BertNERConfig

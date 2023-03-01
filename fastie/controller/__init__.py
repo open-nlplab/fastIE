@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 from .BaseController import BaseController, CONTROLLER
 from .trainer import Trainer, TrainerConfig
 from .inference import Inference, InferenceConfig

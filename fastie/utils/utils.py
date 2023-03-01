@@ -1,7 +1,6 @@
-# -*- coding: UTF-8 -*-
 import os
 from functools import reduce
-from typing import Union, Optional
+from typing import Union, Optional, Tuple
 
 from fastNLP import Vocabulary, Instance
 from fastNLP.io import DataBundle
@@ -11,8 +10,7 @@ from fastie.utils.config import Config
 
 
 def generate_tag_vocab(data_bundle: DataBundle) -> Optional[Vocabulary]:
-    """
-    根据数据集中的已标注样本构建 tag_vocab
+    """根据数据集中的已标注样本构建 tag_vocab.
 
     :param data_bundle: :class:`~fastNLP.io.DataBundle` 对象
     :return: 如果存在已标注样本，则返回构造成功的 :class:`~fastNLP.Vocabulary` 对象，
@@ -39,9 +37,8 @@ def generate_tag_vocab(data_bundle: DataBundle) -> Optional[Vocabulary]:
 
 def check_loaded_tag_vocab(
         loaded_tag_vocab: Optional[Union[dict, Vocabulary]],
-        tag_vocab: Optional[Vocabulary]) -> (int, Optional[Vocabulary]):
-    """
-    检查加载的 tag_vocab 是否与新生成的 tag_vocab 一致
+        tag_vocab: Optional[Vocabulary]) -> Tuple[int, Optional[Vocabulary]]:
+    """检查加载的 tag_vocab 是否与新生成的 tag_vocab 一致.
 
     :param loaded_tag_vocab: 从 ``checkpoint`` 中加载得到的 ``tag_vocab``;
         可以为 ``dict`` 类型，也可以是 :class:`~fastNLP.Vocabulary` 类型。
@@ -55,7 +52,6 @@ def check_loaded_tag_vocab(
          使用返回的 ``tag_vocab``
         * 为 ``-1`` 时
          无可用的 ``tag_vocab``，程序即将退出
-
     """
     idx2word = None
     word2idx = None
@@ -70,7 +66,7 @@ def check_loaded_tag_vocab(
             word2idx = loaded_tag_vocab
             idx2word = {idx: word for word, idx in word2idx.items()}
     if loaded_tag_vocab is None and tag_vocab is None:
-        print("Error: No tag dictionary is available. ")
+        print('Error: No tag dictionary is available. ')
         return -1, None
     if loaded_tag_vocab is None and tag_vocab is not None:
         return 1, tag_vocab
@@ -82,18 +78,19 @@ def check_loaded_tag_vocab(
     if loaded_tag_vocab is not None and tag_vocab is not None:
         if get_flag() != 'infer':
             if word2idx != tag_vocab.word2idx:
-                if set(word2idx.keys()) == set(tag_vocab.word2idx.keys()):
+                if set(word2idx.keys()) == set(tag_vocab.word2idx.keys()): # type: ignore [union-attr]
                     tag_vocab._word2idx.update(word2idx)
                     tag_vocab._idx2word.update(idx2word)
                     return 1, tag_vocab
                 else:
-                    print("Warning: The tag dictionary "
-                          f"[{','.join(list(tag_vocab._word2idx.keys()))}]"
-                          " loaded from the model is not the same as the "
-                          "tag dictionary "
-                          f"[{','.join(list(word2idx.keys()))}]"
-                          " built from the dataset, so the loaded model may be "
-                          "discarded")
+                    print(
+                        'Warning: The tag dictionary '
+                        f"[{','.join(list(tag_vocab._word2idx.keys()))}]" # type: ignore [union-attr]
+                        ' loaded from the model is not the same as the '
+                        'tag dictionary '
+                        f"[{','.join(list(word2idx.keys()))}]"
+                        ' built from the dataset, so the loaded model may be '
+                        'discarded')
                     return 0, tag_vocab
             else:
                 return 1, tag_vocab
@@ -113,10 +110,14 @@ def set_config(_config: object) -> Optional[dict]:
         if os.path.exists(_config) and os.path.isfile(
                 _config) and _config.endswith('.py'):
             if config_flag == 'dict':
-                config_dict = reduce(lambda x, y: {**x, **y }, [
-                    value for value in
-                    Config.fromfile(_config)._cfg_dict.values()
-                    if isinstance(value, dict)])
+                config_dict = reduce(lambda x, y: {
+                    **x,
+                    **y
+                }, [
+                    value
+                    for value in Config.fromfile(_config)._cfg_dict.values()
+                    if isinstance(value, dict)
+                ])
                 return set_config(config_dict)
             elif config_flag == 'class':
                 config_obj = Config.fromfile(_config)._cfg_dict.Config()
@@ -126,9 +127,10 @@ def set_config(_config: object) -> Optional[dict]:
                 }
                 return set_config(config_dict)
         else:
-            for root, dirs, files in os.walk(os.path.join(FASTIE_HOME, 'configs')):
+            for root, dirs, files in os.walk(
+                    os.path.join(FASTIE_HOME, 'configs')):
                 for file in files:
-                    if _config == file.replace(".py", ""):
+                    if _config == file.replace('.py', ''):
                         return set_config(os.path.join(root, file))
         return None
     else:
@@ -136,4 +138,3 @@ def set_config(_config: object) -> Optional[dict]:
             if not key.startswith('_'):
                 global_config[key] = getattr(_config, key)
         return global_config
-

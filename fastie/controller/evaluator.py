@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 from fastie.controller.BaseController import BaseController, CONTROLLER
 from fastie.envs import set_flag
 from fastie.node import BaseNodeConfig

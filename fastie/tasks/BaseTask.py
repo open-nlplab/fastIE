@@ -1,15 +1,14 @@
-# -*- coding: UTF-8 -*- 
+import os.path
 from dataclasses import dataclass, field
-from typing import Sequence, Union, Callable, Generator, Dict
+from typing import Sequence, Union, Callable, Generator, Dict, Optional
 
 from fastNLP.io import DataBundle
+from fastNLP.core.callbacks import CheckpointCallback
 
 from fastie.envs import get_flag
 from fastie.node import BaseNode, BaseNodeConfig
 from fastie.utils.registry import Registry
 from fastie.utils.hub import Hub
-
-from functools import partial
 
 NER = Registry('NER')
 RE = Registry('RE')
@@ -31,8 +30,8 @@ class BaseTaskConfig(BaseNodeConfig):
     save_model: str = field(
         default='',
         metadata=dict(help='The path to save the model in last epoch '
-                           '(Only available for train). ',
-                      existence="train"))
+                      '(Only available for train). ',
+                      existence='train'))
     epochs: int = field(default=20,
                         metadata=dict(help='Total number of training epochs. ',
                                       existence='train'))
@@ -40,8 +39,7 @@ class BaseTaskConfig(BaseNodeConfig):
                       metadata=dict(
                           help='Save the top-k models according to metric. '
                           '(Only available for train). ',
-                          existence='train'
-                      ))
+                          existence='train'))
 
 
 class BaseTask(BaseNode):
@@ -71,8 +69,7 @@ class BaseTask(BaseNode):
 
         def run(data_bundle: DataBundle):
 
-            def run_warp(run_func: Callable,
-                                   data_bundle: DataBundle):
+            def run_warp(run_func: Callable, data_bundle: DataBundle):
                 # 如果存在自定义的模型加载策略
                 if self.load_model != '':
                     if hasattr(self, 'load_state_dict'):
@@ -98,23 +95,57 @@ class BaseTask(BaseNode):
                 if self.save_model != '':
                     # 如果存在自定义模型保存策略
                     if hasattr(self, 'state_dict'):
+
                         def fastie_save_step():
                             Hub.save(self.save_model, self.state_dict())
-                        setattr(parameters_or_data['model'], 'fastie_save_step',
-                            fastie_save_step)
+
+                        setattr(parameters_or_data['model'],
+                                'fastie_save_step', fastie_save_step)
                     # 如果不存在自定义模型保存策略
                     else:
+
                         def fastie_save_step():
                             Hub.save(self.save_model,
                                      parameters_or_data['model'].state_dict())
-                        setattr(parameters_or_data['model'], 'fastie_save_step',
-                            fastie_save_step)
+
+                        setattr(parameters_or_data['model'],
+                                'fastie_save_step', fastie_save_step)
+                    # topk 相关
+                    if self.topk != 0:
+
+                        def model_save_fn(folder):
+                            if hasattr(self, 'state_dict'):
+                                Hub.save(
+                                    os.path.join(
+                                        folder,
+                                        f'{self.__class__.__name__}.bin'),
+                                    self.state_dict())
+
+                            # 如果不存在自定义模型保存策略
+                            else:
+                                Hub.save(
+                                    os.path.join(
+                                        folder,
+                                        f'{self.__class__.__name__}.bin'),
+                                    parameters_or_data['model'].state_dict())
+
+                        callback = CheckpointCallback(
+                            folder=self.save_model,
+                            topk=self.topk if self.topk != 0 else -self.topk,
+                            larger_better=(self.topk > 0),
+                            model_save_fn=model_save_fn)
+                        if 'callbacks' in parameters_or_data:
+                            parameters_or_data['callbacks'].append(callback)
+                        else:
+                            parameters_or_data['callbacks'] = [callback]
                 # 不保存模型
                 else:
+
                     def fastie_save_step():
                         pass
+
                     setattr(parameters_or_data['model'], 'fastie_save_step',
-                        fastie_save_step)
+                            fastie_save_step)
                 # 训练轮数
                 base_parameters['n_epochs'] = self.epochs
                 parameters_or_data.update(base_parameters)

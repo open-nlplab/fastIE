@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 from .chain import Chain
 from .controller import CONTROLLER, Trainer, TrainerConfig, Evaluator, \
     EvaluatorConfig, Inference, InferenceConfig, Interactor, InteractorConfig

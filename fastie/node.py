@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 import inspect
 import os
 import re
@@ -7,7 +6,7 @@ import argparse
 from argparse import ArgumentParser, Namespace, Action
 from dataclasses import dataclass, MISSING
 from functools import reduce
-from typing import Callable, Union, Sequence, Optional, Dict
+from typing import Callable, Union, Sequence, Optional, Dict, Type
 
 from fastie.envs import parser as global_parser, get_flag, type_dict, \
     global_config, parser_flag, config_flag
@@ -16,13 +15,10 @@ from fastie.utils.utils import set_config
 
 @dataclass
 class BaseNodeConfig:
-    """
-    ``fastie`` 节点配置基类
-    """
+    """``fastie`` 节点配置基类."""
 
     def parse(self, obj: object):
-        """
-        将当前对象的属性值赋值给obj
+        """将当前对象的属性值赋值给obj.
 
         :param obj: 任意对象
         :return:
@@ -31,8 +27,7 @@ class BaseNodeConfig:
             setattr(obj, key, value)
 
     def to_dict(self) -> dict:
-        """
-        将当前对象转换为字典
+        """将当前对象转换为字典.
 
         :return:
         """
@@ -49,8 +44,7 @@ class BaseNodeConfig:
 
     @classmethod
     def from_dict(cls, _config: dict):
-        """
-        从字典中创建配置
+        """从字典中创建配置.
 
         :param _config: ``dict`` 类型的配置
         :return: :class:`BaseNodeConfig` 类型的配置
@@ -62,16 +56,14 @@ class BaseNodeConfig:
         return config
 
     def keys(self):
-        """
-        获取当前配置的所有属性名
+        """获取当前配置的所有属性名.
 
         :return: ``list`` 类型的属性名列表
         """
         return [key for key in self.__dir__() if not key.startswith('_')]
 
     def __getitem__(self, item):
-        """
-        通过 ``[]`` 获取属性值
+        """通过 ``[]`` 获取属性值.
 
         :param item: 属性名
         :return: 属性值
@@ -80,9 +72,7 @@ class BaseNodeConfig:
 
 
 class BaseNode(object):
-    """
-    ``fastie`` 节点基类
-    """
+    """``fastie`` 节点基类."""
     _config = BaseNodeConfig()
     _help = 'The base class of all node objects'
 
@@ -92,8 +82,7 @@ class BaseNode(object):
 
     @classmethod
     def from_config(cls, config: Union[BaseNodeConfig, str, dict]):
-        """
-        从配置文件或配置对象中创建节点
+        """从配置文件或配置对象中创建节点.
 
         :param config: 可以为 ``*.py`` 文件路径或者 :class:`BaseNodeConfig` 类型的对象
         :return: :class:`BaseNode` 类型的节点
@@ -108,11 +97,11 @@ class BaseNode(object):
 
     @property
     def parser(self):
-        """
-        根据当前节点的配置类构造当前节点的 ``argparse`` 解析器
+        """根据当前节点的配置类构造当前节点的 ``argparse`` 解析器.
 
         :return: :class:`argparse.ArgumentParser` 类型的解析器
         """
+
         def inspect_all_bases(cls: type):
             if cls == object:
                 return
@@ -184,12 +173,13 @@ class BaseNode(object):
         return self._parser
 
     @property
-    def action(self) -> argparse.Action:
+    def action(self) -> Type[Action]:
         """
         根据当前节点的配置类构造当前节点的 ``argparse`` 解析器的 ``action`` 参数
         :return: :class:`argparse.Action` 类型的 ``action`` 参数
         """
         node = self
+
         class ParseAction(Action):
 
             def __call__(self,
@@ -243,8 +233,7 @@ class BaseNode(object):
 
     @property
     def comments(self) -> dict:
-        """
-        获取当前节点的注释信息
+        """获取当前节点的注释信息.
 
         .. warning::
 
@@ -295,8 +284,7 @@ class BaseNode(object):
 
     @property
     def description(self):
-        """
-        获取当前节点注释中的描述信息
+        """获取当前节点注释中的描述信息.
 
         .. warning::
             该方法已废弃
