@@ -58,8 +58,12 @@ class Model(nn.Module):
             for entity_mention in entity_mentions[b]:
                 target = torch.zeros(self.num_labels).to(features.device)
                 target[entity_mention[1]] = 1
-                for i in entity_mention[0]:
-                    loss += F.binary_cross_entropy(logits[i], target)
+                for i in range(logits.shape[0]):
+                    if i in entity_mention[0]:
+                        loss += F.binary_cross_entropy(logits[i], target)
+                    else:
+                        loss += F.binary_cross_entropy(logits[i],
+                                                       1 - target)
         return dict(loss=loss)
 
     def evaluate_step(self, input_ids, attention_mask, offset_mask,

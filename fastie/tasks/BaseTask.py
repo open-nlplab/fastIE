@@ -1,14 +1,14 @@
 import os.path
 from dataclasses import dataclass, field
-from typing import Sequence, Union, Callable, Generator, Dict, Optional
+from typing import Sequence, Union, Callable, Generator, Dict
 
-from fastNLP.io import DataBundle
 from fastNLP.core.callbacks import CheckpointCallback
+from fastNLP.io import DataBundle
 
 from fastie.envs import get_flag
 from fastie.node import BaseNode, BaseNodeConfig
-from fastie.utils.registry import Registry
 from fastie.utils.hub import Hub
+from fastie.utils.registry import Registry
 
 NER = Registry('NER')
 RE = Registry('RE')
@@ -21,7 +21,7 @@ class BaseTaskConfig(BaseNodeConfig):
         default=False,
         metadata=dict(
             help='Whether to use your NVIDIA graphics card to accelerate the '
-            'process.',
+                 'process.',
             existence=True))
     load_model: str = field(
         default='',
@@ -30,7 +30,7 @@ class BaseTaskConfig(BaseNodeConfig):
     save_model: str = field(
         default='',
         metadata=dict(help='The path to save the model in last epoch '
-                      '(Only available for train). ',
+                           '(Only available for train). ',
                       existence='train'))
     epochs: int = field(default=20,
                         metadata=dict(help='Total number of training epochs. ',
@@ -38,7 +38,7 @@ class BaseTaskConfig(BaseNodeConfig):
     topk: int = field(default=0,
                       metadata=dict(
                           help='Save the top-k models according to metric. '
-                          '(Only available for train). ',
+                               '(Only available for train). ',
                           existence='train'))
 
 
@@ -80,7 +80,7 @@ class BaseTask(BaseNode):
                 # 如果不存在自定义的模型加载策略
                 if self.load_model != '':
                     if not hasattr(self, 'load_state_dict'):
-                        parameters_or_data['model'].\
+                        parameters_or_data['model']. \
                             load_state_dict(Hub.load(self.load_model))
                 # cuda 相关参数
                 if isinstance(self.cuda, bool):
@@ -110,42 +110,41 @@ class BaseTask(BaseNode):
 
                         setattr(parameters_or_data['model'],
                                 'fastie_save_step', fastie_save_step)
-                    # topk 相关
-                    if self.topk != 0:
-
-                        def model_save_fn(folder):
-                            if hasattr(self, 'state_dict'):
-                                Hub.save(
-                                    os.path.join(
-                                        folder,
-                                        f'{self.__class__.__name__}.bin'),
-                                    self.state_dict())
-
-                            # 如果不存在自定义模型保存策略
-                            else:
-                                Hub.save(
-                                    os.path.join(
-                                        folder,
-                                        f'{self.__class__.__name__}.bin'),
-                                    parameters_or_data['model'].state_dict())
-
-                        callback = CheckpointCallback(
-                            folder=self.save_model,
-                            topk=self.topk if self.topk != 0 else -self.topk,
-                            larger_better=(self.topk > 0),
-                            model_save_fn=model_save_fn)
-                        if 'callbacks' in parameters_or_data:
-                            parameters_or_data['callbacks'].append(callback)
-                        else:
-                            parameters_or_data['callbacks'] = [callback]
-                # 不保存模型
+                        # 不保存模型
                 else:
-
                     def fastie_save_step():
                         pass
 
                     setattr(parameters_or_data['model'], 'fastie_save_step',
                             fastie_save_step)
+                # topk 相关
+                if self.topk != 0:
+                    def model_save_fn(folder):
+                        if hasattr(self, 'state_dict'):
+                            Hub.save(
+                                os.path.join(
+                                    folder,
+                                    f'{self.__class__.__name__}.bin'),
+                                self.state_dict())
+
+                        # 如果不存在自定义模型保存策略
+                        else:
+                            Hub.save(
+                                os.path.join(
+                                    folder,
+                                    f'{self.__class__.__name__}.bin'),
+                                parameters_or_data['model'].state_dict())
+
+                    callback = CheckpointCallback(
+                        folder=os.getcwd(),
+                        topk=self.topk if self.topk != 0 else -self.topk,
+                        larger_better=(self.topk > 0),
+                        model_save_fn=model_save_fn)
+                    if 'callbacks' in parameters_or_data:
+                        parameters_or_data['callbacks'].append(callback)
+                    else:
+                        parameters_or_data['callbacks'] = [callback]
+
                 # 训练轮数
                 base_parameters['n_epochs'] = self.epochs
                 parameters_or_data.update(base_parameters)
