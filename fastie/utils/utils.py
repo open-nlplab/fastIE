@@ -1,10 +1,14 @@
 # -*- coding: UTF-8 -*-
+import os
+from functools import reduce
+from typing import Union, Optional
+
 from fastNLP import Vocabulary, Instance
 from fastNLP.io import DataBundle
 
-from fastie.envs import get_flag
+from fastie.envs import get_flag, global_config, config_flag, FASTIE_HOME
+from fastie.utils.config import Config
 
-from typing import Union, Optional
 
 def generate_tag_vocab(data_bundle: DataBundle) -> Optional[Vocabulary]:
     """
@@ -19,6 +23,7 @@ def generate_tag_vocab(data_bundle: DataBundle) -> Optional[Vocabulary]:
             or 'test' in data_bundle.datasets.keys():
         # 存在已标注样本
         tag_vocab = Vocabulary()
+
         def construct_vocab(instance: Instance):
             # 当然，用来 infer 的数据集是无法构建的，这里判断一下
             if 'entity_mentions' in instance.keys():
@@ -30,6 +35,7 @@ def generate_tag_vocab(data_bundle: DataBundle) -> Optional[Vocabulary]:
         return tag_vocab
     else:
         return None
+
 
 def check_loaded_tag_vocab(
         loaded_tag_vocab: Optional[Union[dict, Vocabulary]],
@@ -95,3 +101,39 @@ def check_loaded_tag_vocab(
             tag_vocab._word2idx = word2idx
             tag_vocab._idx2word = idx2word
             return 1, tag_vocab
+
+
+def set_config(_config: object) -> Optional[dict]:
+    if isinstance(_config, dict):
+        for key, value in _config.items():
+            if not key.startswith('_'):
+                global_config[key] = value
+        return global_config
+    elif isinstance(_config, str):
+        if os.path.exists(_config) and os.path.isfile(
+                _config) and _config.endswith('.py'):
+            if config_flag == 'dict':
+                config_dict = reduce(lambda x, y: {**x, **y }, [
+                    value for value in
+                    Config.fromfile(_config)._cfg_dict.values()
+                    if isinstance(value, dict)])
+                return set_config(config_dict)
+            elif config_flag == 'class':
+                config_obj = Config.fromfile(_config)._cfg_dict.Config()
+                config_dict = {
+                    key: getattr(config_obj, key)
+                    for key in dir(config_obj) if not key.startswith('_')
+                }
+                return set_config(config_dict)
+        else:
+            for root, dirs, files in os.walk(os.path.join(FASTIE_HOME, 'configs')):
+                for file in files:
+                    if _config == file.replace(".py", ""):
+                        return set_config(os.path.join(root, file))
+        return None
+    else:
+        for key in _config.__dir__():
+            if not key.startswith('_'):
+                global_config[key] = getattr(_config, key)
+        return global_config
+

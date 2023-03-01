@@ -7,11 +7,11 @@ from typing import Sequence, Optional
 
 from fastie.controller import CONTROLLER, Interactor
 from fastie.dataset import DATASET
-from fastie.envs import set_flag, FASTIE_HOME, set_config, global_config, \
-    config_flag, parser, find_config
+from fastie.envs import set_flag, FASTIE_HOME, global_config, \
+    config_flag, parser
 from fastie.exhibition import Exhibition
 from fastie.tasks import NER, EE, RE
-from fastie.utils import Config
+from fastie.utils import Config, set_config
 from fastie.node import BaseNodeConfig, BaseNode
 from fastie.chain import Chain
 
@@ -189,25 +189,7 @@ class CommandNode(BaseNode):
                         obj = obj_cls()
                         _ = chain + obj
                 elif variable_name == 'config':
-                    if os.path.exists(values):
-                        if config_flag == 'class':
-                            config = Config.fromfile(values)['Config']()
-                        elif config_flag == 'dict':
-                            config = Config.fromfile(values)['config']
-                        set_config(config)
-                        parse_config()
-                        set_config(config)
-                    elif find_config(values) is not None:
-                        if config_flag == 'class':
-                            config = Config.fromfile(
-                                find_config(values))['Config']()
-                        elif config_flag == 'dict':
-                            config = Config.fromfile(
-                                find_config(values))['config']
-                        set_config(config)
-                        parse_config()
-                        set_config(config)
-                    else:
+                    if set_config(values) is None:
                         print(
                             f'The config file `{values}` you selected does not '
                             f'exist. ')

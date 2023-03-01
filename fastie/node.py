@@ -10,8 +10,8 @@ from functools import reduce
 from typing import Callable, Union, Sequence, Optional, Dict
 
 from fastie.envs import parser as global_parser, get_flag, type_dict, \
-    global_config, parser_flag, set_config, config_flag, find_config
-from fastie.utils import Config
+    global_config, parser_flag, config_flag
+from fastie.utils.utils import set_config
 
 
 @dataclass
@@ -91,7 +91,7 @@ class BaseNode(object):
             title=getattr(self, '_help'))
 
     @classmethod
-    def from_config(cls, config: Union[BaseNodeConfig, str]):
+    def from_config(cls, config: Union[BaseNodeConfig, str, dict]):
         """
         从配置文件或配置对象中创建节点
 
@@ -99,57 +99,11 @@ class BaseNode(object):
         :return: :class:`BaseNode` 类型的节点
         """
         node = cls()
-        if isinstance(config, str):
-            # 用户自己提供的配置文件
-            if os.path.exists(config) and os.path.isfile(
-                    config) and config.endswith('.py'):
-                if config_flag == 'dict':
-                    config_dict = reduce(lambda x, y: {
-                        **x,
-                        **y
-                    }, [
-                        value
-                        for value in Config.fromfile(config)._cfg_dict.values(
-                        ) if isinstance(value, dict)
-                    ])
-                    set_config(config_dict)
-                    node._config = node._config.__class__.from_dict(
-                        config_dict)
-                elif config_flag == 'class':
-                    config_obj = Config.fromfile(config)._cfg_dict.Config()
-                    config_dict = {
-                        key: getattr(config_obj, key)
-                        for key in dir(config_obj) if not key.startswith('_')
-                    }
-                    set_config(config_dict)
-                    node._config = node._config.__class__.from_dict(
-                        config_dict)
-            elif find_config(config) is not None:
-                if config_flag == 'dict':
-                    config_dict = reduce(lambda x, y: {
-                        **x,
-                        **y
-                    }, [
-                        value for value in Config.fromfile(find_config(
-                            config))._cfg_dict.values()
-                        if isinstance(value, dict)
-                    ])
-                    set_config(config_dict)
-                    node._config = node._config.__class__.from_dict(
-                        config_dict)
-                elif config_flag == 'class':
-                    config_obj = Config.fromfile(
-                        find_config(config))._cfg_dict.Config()
-                    config_dict = {
-                        key: getattr(config_obj, key)
-                        for key in dir(config_obj) if not key.startswith('_')
-                    }
-                    set_config(config_dict)
-                    node._config = node._config.__class__.from_dict(
-                        config_dict)
-        else:
+        if isinstance(config, BaseNodeConfig):
             node._config = config
             node._config.parse(node)
+        else:
+            set_config(config)
         return node
 
     @property

@@ -1,16 +1,16 @@
 # -*- coding: UTF-8 -*- 
-from fastie.node import BaseNode, BaseNodeConfig
+from fastie.node import BaseNode
 from fastie.utils import Registry
 from fastie.tasks import build_task
 from fastie.dataset.build_dataset import build_dataset
 
-from fastNLP import DataSet, Instance
+from fastNLP import DataSet
 from fastNLP.io import DataBundle
 
 from typing import Union, Sequence, Generator, Optional
 
-CONTROLLER = Registry('CONTROLLER')
 
+CONTROLLER = Registry('CONTROLLER')
 
 class BaseController(BaseNode):
 

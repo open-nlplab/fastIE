@@ -1,6 +1,8 @@
 # -*- coding: UTF-8 -*- 
 import os
 from argparse import ArgumentParser
+from functools import reduce
+
 
 parser: ArgumentParser = ArgumentParser(prog='fastie-train',
                                         conflict_handler='resolve')
@@ -36,25 +38,8 @@ type_dict = {
 global_config: dict = dict()
 
 
-def set_config(_config: object):
-    global global_config
-    if isinstance(_config, dict):
-        for key, value in _config.items():
-            if not key.startswith('_'):
-                global_config[key] = value
-    else:
-        for key in _config.__dir__():
-            if not key.startswith('_'):
-                global_config[key] = getattr(_config, key)
+
 
 
 def get_config():
     return global_config
-
-
-def find_config(config: str):
-    for root, dirs, files in os.walk(os.path.join(FASTIE_HOME, 'configs')):
-        for file in files:
-            if file.startswith(config):
-                return os.path.join(root, file)
-    return None
