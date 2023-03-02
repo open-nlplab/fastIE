@@ -118,7 +118,7 @@ class BaseTask(BaseNode):
                     setattr(parameters_or_data['model'], 'fastie_save_step',
                             fastie_save_step)
                 # topk 相关
-                if self.topk != 0:
+                if self.topk != 0 and "monitor" in parameters_or_data.keys():
                     def model_save_fn(folder):
                         if hasattr(self, 'state_dict'):
                             Hub.save(
@@ -139,9 +139,14 @@ class BaseTask(BaseNode):
                         folder=os.getcwd(),
                         topk=self.topk if self.topk != 0 else -self.topk,
                         larger_better=(self.topk > 0),
-                        model_save_fn=model_save_fn)
+                        model_save_fn=model_save_fn,
+                        monitor=parameters_or_data['monitor']
+                    )
                     if 'callbacks' in parameters_or_data:
-                        parameters_or_data['callbacks'].append(callback)
+                        if isinstance(parameters_or_data['callbacks'], Sequence):
+                            parameters_or_data['callbacks'] = [callback, *parameters_or_data['callbacks']]
+                        else:
+                            parameters_or_data['callbacks'] = [callback, parameters_or_data['callbacks']]
                     else:
                         parameters_or_data['callbacks'] = [callback]
 

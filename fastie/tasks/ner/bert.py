@@ -146,6 +146,7 @@ class BertNER(BaseTask):
             pretrained_model_name_or_path: str = 'bert-base-uncased',
             batch_size: int = 32,
             lr: float = 2e-5,
+
             # 以下是父类的参数，也要复制过来，可以查看一下 BaseTask 参数
             cuda: Union[bool, int, Sequence[int]] = False,
             load_model: str = '',
@@ -311,3 +312,5 @@ class BertNER(BaseTask):
     def load_state_dict(self, state_dict: dict):
         self._loaded_tag_vocab = state_dict['tag_vocab']
         self._model_dict = state_dict['model']
+
+

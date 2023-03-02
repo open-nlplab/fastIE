@@ -11,12 +11,12 @@ from typing import Union, Dict
 
 
 @dataclass
-class JsonNERConfig(BaseDatasetConfig):
+class JsonLinesNERConfig(BaseDatasetConfig):
     folder: str = field(
         default='',
         metadata=dict(help='The folder where the data set resides. '
-                      'We will automatically read the possible train.json, '
-                      'dev.json, test.json and infer.json in it. ',
+                      'We will automatically read the possible train.jsonl, '
+                      'dev.jsonl, test.jsonl and infer.jsonl in it. ',
                       existence=True))
     right_inclusive: bool = field(
         default=True,
@@ -26,9 +26,9 @@ class JsonNERConfig(BaseDatasetConfig):
             existence=True))
 
 
-@DATASET.register_module('json-ner')
-class JsonNER(BaseDataset):
-    _config = JsonNERConfig()
+@DATASET.register_module('jsonlines-ner')
+class JsonLinesNER(BaseDataset):
+    _config = JsonLinesNERConfig()
 
     def __init__(self,
                  folder: str = '',
@@ -88,22 +88,8 @@ class JsonNER(BaseDataset):
                 return dataset
 
         data_bundle = JsonNERLoader().load({
-            file: os.path.exists(os.path.join(self.folder, f'{file}.json'))
+            file: os.path.join(self.folder, f'{file}.jsonl')
             for file in ('train', 'dev', 'test', 'infer')
-            if os.path.exists(os.path.join(self.folder, f'{file}.json'))
+            if os.path.exists(os.path.join(self.folder, f'{file}.jsonl'))
         })
-        self.tag_vocab = vocabulary._word2idx
-        tagged_datasets: Dict[str, DataSet] = {
-            key: value
-            for key, value in data_bundle.datasets.items() if key != 'infer'
-        }
-
-        def index_tag(instance: Instance):
-            entity_mentions = instance['entity_mentions']
-            return dict(
-                entity_mentions=(entity_mentions[0],
-                                 vocabulary.to_index(entity_mentions[1])))
-
-        for dataset in tagged_datasets.values():
-            dataset.apply_more(index_tag)
         return data_bundle
