@@ -47,7 +47,7 @@ class JsonLinesNER(BaseDataset):
 
     def run(self) -> DataBundle:
         vocabulary = Vocabulary()
-
+        node = self
         class JsonNERLoader(Loader):
 
             def _load(self, path: str) -> DataSet:
@@ -71,7 +71,7 @@ class JsonLinesNER(BaseDataset):
                                              entity_mention['entity_type']))
                                     elif 'start' in entity_mention.keys(
                                     ) and 'end' in entity_mention.keys():
-                                        if self.right_inclusive:
+                                        if node.right_inclusive:
                                             entity_mentions.append((list(
                                                 range(entity_mention['start'],
                                                       entity_mention['end'])
