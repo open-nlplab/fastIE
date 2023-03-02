@@ -48,6 +48,7 @@ class JsonLinesNER(BaseDataset):
     def run(self) -> DataBundle:
         vocabulary = Vocabulary()
         node = self
+
         class JsonNERLoader(Loader):
 
             def _load(self, path: str) -> DataSet:

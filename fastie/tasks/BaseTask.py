@@ -1,14 +1,16 @@
 import os.path
 from dataclasses import dataclass, field
-from typing import Sequence, Union, Callable, Generator, Dict
+from typing import Sequence, Union, Callable, Generator, Dict, Optional
 
 from fastNLP.core.callbacks import CheckpointCallback
 from fastNLP.io import DataBundle
+from fastNLP import Vocabulary
 
 from fastie.envs import get_flag
 from fastie.node import BaseNode, BaseNodeConfig
 from fastie.utils.hub import Hub
 from fastie.utils.registry import Registry
+from fastie.utils.utils import generate_tag_vocab, check_loaded_tag_vocab
 
 NER = Registry('NER')
 RE = Registry('RE')
@@ -40,6 +42,11 @@ class BaseTaskConfig(BaseNodeConfig):
                           help='Save the top-k models according to metric. '
                                '(Only available for train). ',
                           existence='train'))
+    fp16: bool = field(default=False,
+                       metadata=dict(
+                           help='Enable mixed-precision training. ',
+                           existence='train'
+                       ))
 
 
 class BaseTask(BaseNode):
@@ -56,6 +63,7 @@ class BaseTask(BaseNode):
                  save_model: str = '',
                  epochs: int = 20,
                  topk: int = 0,
+                 fp16: bool = False,
                  **kwargs):
         BaseNode.__init__(self, **kwargs)
         self.cuda = cuda
@@ -63,9 +71,14 @@ class BaseTask(BaseNode):
         self.save_model = save_model
         self.epochs = epochs
         self.topk = topk
-        object.__setattr__(self, 'run', self.generate_run_func(self.run))
+        self.fp16 = fp16
 
-    def generate_run_func(self, run_func: Callable):
+        object.__setattr__(self, 'run', self._generate_run_func(self.run))
+
+        self._state_dict: Optional[dict] = None
+
+
+    def _generate_run_func(self, run_func: Callable):
 
         def run(data_bundle: DataBundle):
 
@@ -112,27 +125,27 @@ class BaseTask(BaseNode):
                                 'fastie_save_step', fastie_save_step)
                         # 不保存模型
                 else:
+
                     def fastie_save_step():
                         pass
 
                     setattr(parameters_or_data['model'], 'fastie_save_step',
                             fastie_save_step)
                 # topk 相关
-                if self.topk != 0 and "monitor" in parameters_or_data.keys():
+                if self.topk != 0 and 'monitor' in parameters_or_data.keys():
+
                     def model_save_fn(folder):
                         if hasattr(self, 'state_dict'):
                             Hub.save(
-                                os.path.join(
-                                    folder,
-                                    f'{self.__class__.__name__}.bin'),
+                                os.path.join(folder,
+                                             f'{self.__class__.__name__}.bin'),
                                 self.state_dict())
 
                         # 如果不存在自定义模型保存策略
                         else:
                             Hub.save(
-                                os.path.join(
-                                    folder,
-                                    f'{self.__class__.__name__}.bin'),
+                                os.path.join(folder,
+                                             f'{self.__class__.__name__}.bin'),
                                 parameters_or_data['model'].state_dict())
 
                     callback = CheckpointCallback(
@@ -140,13 +153,17 @@ class BaseTask(BaseNode):
                         topk=self.topk if self.topk != 0 else -self.topk,
                         larger_better=(self.topk > 0),
                         model_save_fn=model_save_fn,
-                        monitor=parameters_or_data['monitor']
-                    )
+                        monitor=parameters_or_data['monitor'])
                     if 'callbacks' in parameters_or_data:
-                        if isinstance(parameters_or_data['callbacks'], Sequence):
-                            parameters_or_data['callbacks'] = [callback, *parameters_or_data['callbacks']]
+                        if isinstance(parameters_or_data['callbacks'],
+                                      Sequence):
+                            parameters_or_data['callbacks'] = [
+                                callback, *parameters_or_data['callbacks']
+                            ]
                         else:
-                            parameters_or_data['callbacks'] = [callback, parameters_or_data['callbacks']]
+                            parameters_or_data['callbacks'] = [
+                                callback, parameters_or_data['callbacks']
+                            ]
                     else:
                         parameters_or_data['callbacks'] = [callback]
 

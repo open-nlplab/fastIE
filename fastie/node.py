@@ -1,16 +1,13 @@
 import inspect
-import os
 import re
 import zipfile
-import argparse
 from argparse import ArgumentParser, Namespace, Action
 from dataclasses import dataclass, MISSING
-from functools import reduce
-from typing import Callable, Union, Sequence, Optional, Dict, Type
+from typing import Tuple, Union, Sequence, Optional, Dict, Type
 
 from fastie.envs import parser as global_parser, get_flag, type_dict, \
-    global_config, parser_flag, config_flag
-from fastie.utils.utils import set_config
+    global_config, parser_flag
+from fastie.utils.utils import set_config, inspect_function_calling
 
 
 @dataclass
@@ -326,21 +323,27 @@ class BaseNode(object):
         return fields
 
     def __getattribute__(self, item: str):
-        if item in global_config.keys() and not item.startswith('_'):
+        if not item.startswith('_'):
             try:
-                return global_config[item]
-            except AttributeError:
                 return object.__getattribute__(self, item)
+            except AttributeError:
+                try:
+                    return global_config[item]
+                except KeyError:
+                    return None
         else:
             return object.__getattribute__(self, item)
 
     def __setattr__(self, key, value):
         if not key.startswith('_') \
-                and type(value) in [t for t in type_dict.values()] \
-                and not isinstance(value, Callable) \
-                and not isinstance(value, BaseNodeConfig):
-            if key in global_config.keys():
+                and type(value) in [t for t in type_dict.values()]:
+            user_provided_argument: Optional[Tuple[str]] = \
+                inspect_function_calling('__init__')
+            if user_provided_argument is None:
+                # 本函数在 __init__ 之外被调用
                 object.__setattr__(self, key, value)
             else:
-                global_config[key] = value
+                # 本函数在 __init__ 中被调用
+                if key in user_provided_argument:
+                    object.__setattr__(self, key, value)
         object.__setattr__(self, key, value)

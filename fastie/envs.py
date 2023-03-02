@@ -1,6 +1,6 @@
 import os
 from argparse import ArgumentParser
-from functools import reduce
+from fastNLP import logger
 
 parser: ArgumentParser = ArgumentParser(prog='fastie-train',
                                         conflict_handler='resolve')

@@ -10,7 +10,7 @@ from fastNLP import DataSet, Instance, Vocabulary
 from fastNLP.io import Loader, DataBundle
 
 from fastie.dataset.BaseDataset import DATASET, BaseDatasetConfig, BaseDataset
-from fastie.envs import get_config
+from fastie.envs import get_config, logger
 
 
 @dataclass
@@ -123,8 +123,8 @@ class ColumnNER(BaseDataset):
             tag_vocab = Vocabulary()
             if 'vocabulary' in get_config().keys():
                 if get_config()['vocabulary'] != tag_vocab._word2idx:
-                    print(
-                        'Warning: Dictionaries generated from the dataset '
+                    logger.warn(
+                        'Dictionaries generated from the dataset '
                         'are not the same as those in the provided preset,\n'
                         'and will be preferred to dictionaries generated from '
                         'the dataset')

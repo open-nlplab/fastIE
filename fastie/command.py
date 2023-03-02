@@ -7,7 +7,7 @@ from typing import Sequence, Optional
 from fastie.controller import CONTROLLER, Interactor
 from fastie.dataset import DATASET
 from fastie.envs import set_flag, FASTIE_HOME, global_config, \
-    config_flag, parser
+    parser, logger
 from fastie.exhibition import Exhibition
 from fastie.tasks import NER, EE, RE
 from fastie.utils import Config, set_config
@@ -30,16 +30,17 @@ def parse_config():
             elif task.lower() == 're':
                 obj_cls = RE.get(solution)
             else:
-                print(f'The task type `{task}` you selected does not exist. ')
-                print('You can only choose from `ner`, `ee`, or `re`. ')
+                logger.error(
+                    f'The task type `{task}` you selected does not exist. \n',
+                    'You can only choose in `ner`, `ee`, or `re`. ')
                 exit(0)
             if obj_cls is not None:
                 obj = obj_cls()
                 _ = chain + obj
             else:
-                print(
+                logger.warn(
                     f'The solution `{solution}` you selected does not exist. ')
-                print('Here are the optional options: \n')
+                logger.info('Here are the optional options: \n')
                 sys.argv.append('-t')
                 sys.argv.append('-l')
                 Exhibition.intercept()
@@ -47,9 +48,10 @@ def parse_config():
         elif key == 'dataset':
             obj_cls = DATASET.get(global_config[key])
             if obj_cls is None:
-                print(f'The dataset `{global_config[key]}` you selected does '
-                      f'not exist. ')
-                print('Here are the optional options: \n')
+                logger.warn(
+                    f'The dataset `{global_config[key]}` you selected does '
+                    f'not exist. ')
+                logger.info('Here are the optional options: \n')
                 sys.argv.append('-d')
                 sys.argv.append('-l')
                 Exhibition.intercept()
@@ -145,10 +147,9 @@ class CommandNode(BaseNode):
                         elif task.lower() == 're':
                             obj_cls = RE.get(solution)
                         else:
-                            print(
+                            logger.error(
                                 f'The task type `{task}` you selected does not '
-                                f'exist. ')
-                            print(
+                                f'exist. \n',
                                 'You can only choose from `ner`, `ee`, or `re`. '
                             )
                             exit(0)
@@ -156,20 +157,20 @@ class CommandNode(BaseNode):
                             obj = obj_cls()
                             _ = chain + obj
                         else:
-                            print(
+                            logger.warn(
                                 f'The solution `{solution}` you selected does '
                                 f'not exist. ')
-                            print('Here are the optional options: \n')
+                            logger.info('Here are the optional options: \n')
                             sys.argv.append('-t')
                             sys.argv.append('-l')
                             Exhibition.intercept()
                             exit(0)
                     else:
-                        print(
+                        logger.warn(
                             f'You must specify both the task category and the '
                             f'specific solution, such as `ner/bert` instead of '
                             f'`{values}`. ')
-                        print('Here are the optional options: \n')
+                        logger.info('Here are the optional options: \n')
                         sys.argv.append('-t')
                         sys.argv.append('-l')
                         Exhibition.intercept()
@@ -177,9 +178,10 @@ class CommandNode(BaseNode):
                 elif variable_name == 'dataset':
                     obj_cls = DATASET.get(values)
                     if obj_cls is None:
-                        print(f'The dataset `{values}` you selected does not '
-                              f'exist. ')
-                        print('Here are the optional options: \n')
+                        logger.warn(
+                            f'The dataset `{values}` you selected does not '
+                            f'exist. ')
+                        logger.info('Here are the optional options: \n')
                         sys.argv.append('-d')
                         sys.argv.append('-l')
                         Exhibition.intercept()
@@ -189,10 +191,10 @@ class CommandNode(BaseNode):
                         _ = chain + obj
                 elif variable_name == 'config':
                     if set_config(values) is None:
-                        print(
+                        logger.warn(
                             f'The config file `{values}` you selected does not '
                             f'exist. ')
-                        print('Here are the optional options: \n')
+                        logger.info('Here are the optional options: \n')
                         sys.argv.append('-c')
                         sys.argv.append('-l')
                         Exhibition.intercept()
@@ -222,7 +224,8 @@ def interact_handler():
     from fastie.dataset.io.sentence import Sentence
     sentence = ''
     while sentence != '!exit':
-        sentence = input('Type a sequence, type `!exit` to end interacting:\n')
+        sentence = input(
+            'Type a sequence, type `!exit` to end interacting:\n>> ')
         if len(sentence) == 0:
             continue
         if sentence == '!exit':

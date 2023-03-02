@@ -1,11 +1,12 @@
 import os
 from functools import reduce
-from typing import Union, Optional, Tuple
+from typing import Union, Optional, Set, Tuple
 
 from fastNLP import Vocabulary, Instance
 from fastNLP.io import DataBundle
 
-from fastie.envs import get_flag, global_config, config_flag, FASTIE_HOME
+from fastie.envs import get_flag, global_config, config_flag, FASTIE_HOME, \
+    logger
 from fastie.utils.config import Config
 
 
@@ -66,7 +67,7 @@ def check_loaded_tag_vocab(
             word2idx = loaded_tag_vocab
             idx2word = {idx: word for word, idx in word2idx.items()}
     if loaded_tag_vocab is None and tag_vocab is None:
-        print('Error: No tag dictionary is available. ')
+        logger.warn('Error: No tag dictionary is available. ')
         return -1, None
     if loaded_tag_vocab is None and tag_vocab is not None:
         return 1, tag_vocab
@@ -78,14 +79,15 @@ def check_loaded_tag_vocab(
     if loaded_tag_vocab is not None and tag_vocab is not None:
         if get_flag() != 'infer':
             if word2idx != tag_vocab.word2idx:
-                if set(word2idx.keys()) == set(tag_vocab.word2idx.keys()): # type: ignore [union-attr]
+                if set(word2idx.keys()) == set(tag_vocab.word2idx.keys()
+                                               ):  # type: ignore [union-attr]
                     tag_vocab._word2idx.update(word2idx)
                     tag_vocab._idx2word.update(idx2word)
                     return 1, tag_vocab
                 else:
-                    print(
-                        'Warning: The tag dictionary '
-                        f"[{','.join(list(tag_vocab._word2idx.keys()))}]" # type: ignore [union-attr]
+                    logger.warn(
+                        'The tag dictionary '
+                        f"[{','.join(list(tag_vocab._word2idx.keys()))}]"  # type: ignore [union-attr]
                         ' loaded from the model is not the same as the '
                         'tag dictionary '
                         f"[{','.join(list(word2idx.keys()))}]"
@@ -138,3 +140,30 @@ def set_config(_config: object) -> Optional[dict]:
             if not key.startswith('_'):
                 global_config[key] = getattr(_config, key)
         return global_config
+
+
+def inspect_function_calling(func_name: str) -> Optional[Set[str]]:
+    import inspect
+    frame_info_list = inspect.stack()
+    argument_user_provided = []
+    for i in range(len(frame_info_list)):
+        if frame_info_list[i + 1].function == func_name:
+            for k in range(i, len(frame_info_list)):
+                if frame_info_list[k + 1].function != func_name:
+                    co_const = frame_info_list[k + 1].frame.f_code.co_consts
+                    if len(co_const) > 1:
+                        for j in range(len(co_const) - 1, -1, -1):
+                            if isinstance(co_const[j], tuple) and \
+                                    isinstance(co_const[j][0], str):
+                                argument_user_provided.extend(co_const[j])
+                                break
+                    if 'args' in frame_info_list[k].frame.f_locals.keys():
+                        argument_list = \
+                            frame_info_list[k + 1].\
+                        frame.f_locals[func_name].__code__.co_varnames
+                        argument_user_provided.\
+                            extend(argument_list[:len(
+                            frame_info_list[k].frame.f_locals['args'])])
+                    # 转换为 set 去除重复项
+                    return set(argument_user_provided)
+    return None

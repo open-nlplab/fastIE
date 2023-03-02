@@ -8,7 +8,7 @@ from fastNLP import Evaluator, DataSet, Metric
 from fastNLP.io import DataBundle
 
 from fastie.controller.BaseController import BaseController, CONTROLLER
-from fastie.envs import set_flag
+from fastie.envs import set_flag, logger
 from fastie.node import BaseNodeConfig
 
 
@@ -116,8 +116,9 @@ class Inference(BaseController):
                                                Sequence[str]]] = None):
         parameters_or_data = BaseController.run(self, parameters_or_data)
         if parameters_or_data is None:
-            print('Inference tool do not allow task and dataset to be left '
-                  'empty. ')
+            logger.error(
+                'Inference tool do not allow task and dataset to be left '
+                'empty. ')
             exit(1)
         parameters_or_data['evaluate_fn'] = 'inference_step'
         # parameters_or_data["evaluate_batch_step_fn"] = generate_step_fn

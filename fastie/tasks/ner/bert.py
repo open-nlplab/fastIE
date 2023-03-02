@@ -62,8 +62,7 @@ class Model(nn.Module):
                     if i in entity_mention[0]:
                         loss += F.binary_cross_entropy(logits[i], target)
                     else:
-                        loss += F.binary_cross_entropy(logits[i],
-                                                       1 - target)
+                        loss += F.binary_cross_entropy(logits[i], 1 - target)
         return dict(loss=loss)
 
     def evaluate_step(self, input_ids, attention_mask, offset_mask,
@@ -266,12 +265,14 @@ class BertNER(BaseTask):
                                       self.model.parameters(), lr=self.lr),
                                   train_dataloader=train_dataloader,
                                   evaluate_dataloaders=evaluate_dataloader,
-                                  metrics=metrics)
+                                  metrics=metrics,
+                                  monitor='accuracy')
             else:
                 parameters = dict(model=self.model,
                                   optimizers=torch.optim.Adam(
                                       self.model.parameters(), lr=self.lr),
-                                  train_dataloader=train_dataloader)
+                                  train_dataloader=train_dataloader,
+                                  monitor='accuracy')
         elif get_flag() == 'eval':
             evaluate_dataloader = prepare_dataloader(
                 data_bundle.get_dataset('test'),
@@ -312,5 +313,3 @@ class BertNER(BaseTask):
     def load_state_dict(self, state_dict: dict):
         self._loaded_tag_vocab = state_dict['tag_vocab']
         self._model_dict = state_dict['model']
-
-

@@ -1,7 +1,7 @@
 from fastie.controller.BaseController import BaseController, CONTROLLER
 from fastie.controller.inference import Inference
 from fastie.node import BaseNodeConfig
-from fastie.envs import set_flag
+from fastie.envs import set_flag, logger
 
 from dataclasses import dataclass, field
 
@@ -41,7 +41,8 @@ class Interactor(BaseController):
                                                Sequence[str]]] = None):
         parameters_or_data = BaseController.run(self, parameters_or_data)
         if parameters_or_data is None:
-            print('Interacting tool do not allow task and dataset to be left '
-                  'empty. ')
+            logger.error(
+                'Interacting tool do not allow task and dataset to be left '
+                'empty. ')
             exit(1)
         return self.inference(parameters_or_data=parameters_or_data)

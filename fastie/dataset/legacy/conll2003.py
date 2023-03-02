@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Union
 
 import numpy as np
 from datasets import load_dataset
@@ -7,6 +6,7 @@ from fastNLP import DataSet, Instance, Vocabulary
 from fastNLP.io import DataBundle
 
 from fastie.dataset.BaseDataset import BaseDataset, DATASET, BaseDatasetConfig
+from fastie.envs import logger
 
 
 @dataclass
@@ -40,7 +40,7 @@ class Conll2003(BaseDataset):
         raw_dataset = load_dataset('conll2003')
         datasets = {}
         if self.tag not in ('ner'):
-            print('Tag must be `ner`.')
+            logger.error('Tag must be `ner`.')
             exit(1)
         tag2idx = {
             'ner': {

@@ -1,5 +1,5 @@
 from fastie.controller.BaseController import BaseController, CONTROLLER
-from fastie.envs import set_flag
+from fastie.envs import set_flag, logger
 from fastie.node import BaseNodeConfig
 
 from fastNLP import DataSet
@@ -28,8 +28,9 @@ class Evaluator(BaseController):
                                                Sequence[str]]] = None):
         parameters_or_data = BaseController.run(self, parameters_or_data)
         if parameters_or_data is None:
-            print('Evaluating tool do not allow task and dataset to be left '
-                  'empty. ')
+            logger.error(
+                'Evaluating tool do not allow task and dataset to be left '
+                'empty. ')
             exit(1)
         evaluator = FastNLP_Evaluator(**parameters_or_data)
         evaluator.run()

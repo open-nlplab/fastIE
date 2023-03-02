@@ -1,7 +1,6 @@
 from fastie.controller.BaseController import BaseController, CONTROLLER
-from fastie.envs import set_flag
+from fastie.envs import set_flag, logger
 from fastie.node import BaseNodeConfig
-from fastie.utils.hub import Hub
 
 from fastNLP import DataSet
 from fastNLP.io import DataBundle
@@ -31,8 +30,9 @@ class Trainer(BaseController):
                                                Sequence[str]]] = None):
         parameters_or_data = BaseController.run(self, parameters_or_data)
         if parameters_or_data is None:
-            print('Training tool do not allow task and dataset to be left '
-                  'empty. ')
+            logger.error(
+                'Training tool do not allow task and dataset to be left '
+                'empty. ')
             exit(1)
         trainer = FastNLP_Trainer(**parameters_or_data)
         trainer.run()
