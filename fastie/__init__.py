@@ -2,15 +2,17 @@ from .chain import Chain
 from .controller import CONTROLLER, Trainer, TrainerConfig, Evaluator, \
     EvaluatorConfig, Inference, InferenceConfig, Interactor, InteractorConfig
 from .dataset import DATASET, BaseDataset, BaseDatasetConfig
-from .envs import get_flag, set_flag, parser, get_config, logger
+from .envs import get_flag, set_flag, parser, logger, get_task, get_dataset, \
+    set_task, set_dataset
 from .node import BaseNode, BaseNodeConfig
 from .tasks import NER, EE, RE
-from .utils import Registry, Config, Hub, set_config
+from .utils import Registry, Config, Hub, parse_config, generate_tag_vocab, \
+    check_loaded_tag_vocab
 
 __all__ = [
     'BaseNode', 'Chain', 'get_flag', 'set_flag', 'parser', 'BaseNodeConfig',
-    'set_config', 'get_config', 'NER', 'EE', 'RE', 'DATASET', 'CONTROLLER',
-    'Trainer', 'TrainerConfig', 'Evaluator', 'EvaluatorConfig', 'Inference',
+    'parse_config', 'NER', 'EE', 'RE', 'DATASET', 'CONTROLLER', 'Trainer',
+    'TrainerConfig', 'Evaluator', 'EvaluatorConfig', 'Inference',
     'InferenceConfig', 'Interactor', 'InteractorConfig', 'Registry', 'Config',
-    'Hub', 'logger'
+    'Hub', 'logger', 'generate_tag_vocab', 'check_loaded_tag_vocab'
 ]

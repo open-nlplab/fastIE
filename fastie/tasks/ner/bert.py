@@ -13,8 +13,8 @@ from fastNLP.transformers.torch.models.bert import BertModel, BertConfig, \
 from torch import nn
 
 from fastie.envs import get_flag
-from fastie.utils.utils import generate_tag_vocab, check_loaded_tag_vocab
 from fastie.tasks.BaseTask import BaseTask, BaseTaskConfig, NER
+from fastie.utils.utils import generate_tag_vocab, check_loaded_tag_vocab
 
 
 class Model(nn.Module):
@@ -126,10 +126,8 @@ class BertNERConfig(BaseTaskConfig):
             'https://huggingface.co/transformers/pretrained_models.html for '
             'options).',
             existence=True))
-    num_labels: int = field(default=9,
-                            metadata=dict(
-                                help='Number of label categories to predict.',
-                                existence=True))
+    lr: float = field(default=2e-5,
+                      metadata=dict(help='learning rate', existence='train'))
 
 
 @NER.register_module('bert')
@@ -143,66 +141,52 @@ class BertNER(BaseTask):
     def __init__(
             self,
             pretrained_model_name_or_path: str = 'bert-base-uncased',
-            batch_size: int = 32,
             lr: float = 2e-5,
 
             # 以下是父类的参数，也要复制过来，可以查看一下 BaseTask 参数
             cuda: Union[bool, int, Sequence[int]] = False,
             load_model: str = '',
+            save_model: str = '',
+            batch_size: int = 32,
+            shuffle: bool = True,
             epochs: int = 20,
+            topk: int = 0,
+            monitor: str = '',
+            fp16: bool = False,
             **kwargs):
         # 必须要把父类 （BaseTask）的参数也复制过来，否则用户没有父类的代码提示；
         # 在这里进行父类的初始化；
         # 父类的参数我们不需要进行任何操作，比如这里的 cuda 和 load_model，我们无视就可以了。
         super(BertNER, self).__init__(cuda=cuda,
                                       load_model=load_model,
+                                      save_model=save_model,
+                                      batch_size=batch_size,
+                                      shuffle=shuffle,
                                       epochs=epochs,
+                                      topk=topk,
+                                      monitor=monitor,
+                                      fp16=fp16,
                                       **kwargs)
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
-        # __init__ 值用来初始化所有属性变量，不要进行任何耗时操作
-        # 这里初始化的属性优先级是要比 global_config 低的
-        self.batch_size = batch_size
         self.lr = lr
-        self.load_model = load_model
 
-        # 存储模型时要额外存的隐属性
-        # 只存 model 权重的不用这些东西，save 和 load 函数也不用写
-        # 建议保存简单的数据结构，比如这里的 tag2idx 保存的是个 dict 而不是 Vocabulary
-        # 注意额外的参数，如果不想暴露给用户的话，变量名要以下划线开头
-        self._loaded_tag_vocab = None
-        self._model_dict = None
-
-    def run(self, data_bundle: DataBundle):
-        # 注意，接收的 data_bundle 可能有用来 infer 的，也就是说没有 label 信息，
-        # 预处理的时候要注意
-        self.tokenizer = BertTokenizer.from_pretrained(
-            # 对自己进行 getattr 优先级是首先从 global_config 取，
-            # global_config 中没有这个值的话再从自己的 __dict__ 里面取
+    def on_dataset_preprocess(self, data_bundle: DataBundle,
+                              tag_vocab: Vocabulary,
+                              state_dict: Optional[dict]) -> DataBundle:
+        # 数据预处理
+        tokenizer = BertTokenizer.from_pretrained(
             self.pretrained_model_name_or_path)
 
-        tag_vocab = generate_tag_vocab(data_bundle)
-        signal, tag_vocab = check_loaded_tag_vocab(self._loaded_tag_vocab,
-                                                   tag_vocab)
-        if signal == 0:
-            # 信号为 0 表示抛弃加载模型
-            self._loaded_tag_vocab = None
-            self._model_dict = None
-        if signal == -1:
-            # 警告在 check_loaded_tag_vocab 定义中写好了
-            pass
-
-        # 将 token 转换为 id，由于 bpe 会改变 token 的长度，所以除了 input_ids，
-        # attention_mask 意外还返回了 offset_mask，input_ids 里面哪些是原来的 token
         def tokenize(instance: Instance):
             result_dict = {}
             input_ids_list, attention_mask_list, offset_mask_list = [], [], []
             for token in instance['tokens']:
-                tokenized_token = self.tokenizer([token],
-                                                 is_split_into_words=True,
-                                                 return_tensors='np',
-                                                 return_attention_mask=True,
-                                                 return_token_type_ids=False,
-                                                 add_special_tokens=False)
+                tokenized_token = tokenizer([token],
+                                            is_split_into_words=True,
+                                            return_tensors='np',
+                                            return_attention_mask=True,
+                                            return_token_type_ids=False,
+                                            add_special_tokens=False)
                 token_offset_mask = np.zeros(
                     tokenized_token['input_ids'].shape, dtype=int)
                 token_offset_mask[0, 0] = 1
@@ -229,87 +213,25 @@ class BertNER(BaseTask):
             return result_dict
 
         data_bundle.apply_more(tokenize)
-        # 为了 infer 的时候能够使用，我们把 tag_vocab 存起来
-        self.model = Model(self.pretrained_model_name_or_path,
-                           num_labels=len(list(tag_vocab.word2idx.keys())),
-                           tag_vocab=tag_vocab)
-        if self._model_dict is not None:
-            self.model.load_state_dict(self._model_dict)
-        # Vocabulary 这种复杂的数据类型是不会存到配置文件中的，所以把 dict 类型的 word2idx
-        # 存起来对自己进行 setattr 会同时把这个变量存到 global_config 中，便于后续导出
-        # 前提条件：1. 是简单的数据类型，可以见 fastie.envs.type_dict，
-        # 2. 变量名不以下划线开头
-        # 因此想要保存起来的东西就直接存到 self 中吧。
+        return data_bundle
 
-        # 此外，global_config 中已经存在的变量，不允许修改
-        # 因此建议想要存储的变量不要修改
-        # 比如下面两句不行的：
-        # self.var = 1 // 存到了 global_config 中
-        # self.var = 2 // 没有任何作用
-        metrics = {'accuracy': Accuracy()}
-        # 使用 get_flag 判断现在要进行的事情，可能的取值有 `train`, `eval`, `infer`,
-        # `interact`
-        if get_flag() == 'train':
-            train_dataloader = prepare_dataloader(
-                data_bundle.get_dataset('train'),
-                batch_size=self.batch_size,
-                shuffle=True)
-            # 用户不一定需要验证集，所以这里要判断一下
-            if 'dev' in data_bundle.datasets.keys():
-                evaluate_dataloader = prepare_dataloader(
-                    data_bundle.get_dataset('dev'),
-                    batch_size=self.batch_size,
-                    shuffle=True)
-                parameters = dict(model=self.model,
-                                  optimizers=torch.optim.Adam(
-                                      self.model.parameters(), lr=self.lr),
-                                  train_dataloader=train_dataloader,
-                                  evaluate_dataloaders=evaluate_dataloader,
-                                  metrics=metrics,
-                                  monitor='accuracy')
-            else:
-                parameters = dict(model=self.model,
-                                  optimizers=torch.optim.Adam(
-                                      self.model.parameters(), lr=self.lr),
-                                  train_dataloader=train_dataloader,
-                                  monitor='accuracy')
-        elif get_flag() == 'eval':
-            evaluate_dataloader = prepare_dataloader(
-                data_bundle.get_dataset('test'),
-                batch_size=self.batch_size,
-                shuffle=True)
-            parameters = dict(model=self.model,
-                              evaluate_dataloaders=evaluate_dataloader,
-                              metrics=metrics)
-        elif get_flag() == 'infer' or get_flag() == 'interact':
-            # 注意：infer 和 eval 其实并没有区别，只是把 evaluate_dataloaders
-            # 换成推理的数据集了；
-            # 我们不需要管怎么推理的，只要在模型里面写好 inference_step 就可以了
-            # 目前推理和交互对于任务来说没有任何区别
-            infer_dataloader = prepare_dataloader(
-                data_bundle.get_dataset('infer'),
-                batch_size=self.batch_size,
-                shuffle=True)
-            parameters = dict(model=self.model,
-                              evaluate_dataloaders=infer_dataloader,
-                              driver='torch')
-        return parameters
+    def on_setup_model(self, data_bundle: DataBundle, tag_vocab: Vocabulary,
+                       state_dict: Optional[dict]):
+        # 模型加载阶段
+        model = Model(self.pretrained_model_name_or_path,
+                      num_labels=len(list(tag_vocab.word2idx.keys())),
+                      tag_vocab=tag_vocab)
+        if state_dict:
+            model.load_state_dict(state_dict['model'])
+        return model
 
-    # 自己有额外的数据需要存的话就要额外在自己的 task 类加上 state_dict 和 load_state_dict 方法
-    # 否则只会存和读取 model 的 state_dict
-    def state_dict(self) -> dict:
-        return {
-            'model': self.model.state_dict(),
-            'tag_vocab': self.model.tag_vocab.word2idx
-        }
+    def on_setup_optimizers(self, model, data_bundle: DataBundle,
+                            tag_vocab: Vocabulary, state_dict: Optional[dict]):
+        # 优化器加载阶段
+        return torch.optim.Adam(model.parameters(), lr=self.lr)
 
-    # 因为 checkpoint 里面的额外变量会影响到模型结构
-    # 比如这里的 num_labels 会影响全连接层的输出维度
-    # 因此没有自动进行的可行性，把这些因变量输入进来后自己判断吧
-    # 比如 self._num_labels 为 None 的话就去找 train 数据集自动判断
-    # 不为 None 检验一下和自动生成的是否一致
-    # 注意额外的参数，如果不想暴露给用户的话，变量名要以下划线开头
-    # 注意：task 里面的 load_state_dict 调用时机是 __init__ 阶段
-    def load_state_dict(self, state_dict: dict):
-        self._loaded_tag_vocab = state_dict['tag_vocab']
-        self._model_dict = state_dict['model']
+    def on_setup_metrics(self, model, data_bundle: DataBundle,
+                         tag_vocab: Vocabulary,
+                         state_dict: Optional[dict]) -> dict:
+        # 评价指标加载阶段
+        return {'accuracy': Accuracy()}

@@ -1,6 +1,7 @@
 from fastie.dataset.BaseDataset import DATASET
 from fastie.dataset.io.sentence import Sentence
-from fastie.envs import get_config, get_flag
+from fastie.envs import get_flag, get_dataset
+from fastie.utils.utils import parse_config
 
 from typing import Union, Optional, Sequence
 
@@ -13,9 +14,16 @@ def build_dataset(
                             DataBundle]]
 ) -> DataBundle:
     data_bundle = DataBundle()
+    if isinstance(dataset, str):
+        _config = parse_config(dataset)
+        if _config and 'dataset' in _config.keys():
+            data_bundle = DATASET.get(
+                _config['dataset']).from_config(_config).run()
     if dataset is None:
-        if 'dataset' in get_config().keys():
-            data_bundle = DATASET.get(get_config()['dataset'])()()
+        if not get_dataset():
+            raise ValueError('The dataset you want to use is not specified.')
+        else:
+            data_bundle = DATASET.get(get_dataset())().run()()
     else:
         if isinstance(dataset, str) or isinstance(dataset, Sequence) \
                 and isinstance(dataset[0], str):
@@ -29,6 +37,6 @@ def build_dataset(
                 data_bundle = DataBundle(datasets={'train': dataset})
             elif get_flag() == 'eval':
                 data_bundle = DataBundle(datasets={'test': dataset})
-            elif get_flag() == 'infer':
+            elif get_flag() == 'infer' or get_flag() == 'interact':
                 data_bundle = DataBundle(datasets={'infer': dataset})
     return data_bundle

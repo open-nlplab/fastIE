@@ -3,11 +3,10 @@ import re
 import zipfile
 from argparse import ArgumentParser, Namespace, Action
 from dataclasses import dataclass, MISSING
-from typing import Tuple, Union, Sequence, Optional, Dict, Type
+from typing import Union, Sequence, Optional, Dict, Type
 
-from fastie.envs import parser as global_parser, get_flag, type_dict, \
-    global_config, parser_flag
-from fastie.utils.utils import set_config, inspect_function_calling
+from fastie.envs import parser as global_parser, get_flag, PARSER_FLAG
+from fastie.utils.utils import parse_config
 
 
 @dataclass
@@ -76,6 +75,7 @@ class BaseNode(object):
     def __init__(self, **kwargs):
         self._parser = global_parser.add_argument_group(
             title=getattr(self, '_help'))
+        self._overload_config: dict = {}
 
     @classmethod
     def from_config(cls, config: Union[BaseNodeConfig, str, dict]):
@@ -87,9 +87,12 @@ class BaseNode(object):
         node = cls()
         if isinstance(config, BaseNodeConfig):
             node._config = config
-            node._config.parse(node)
         else:
-            set_config(config)
+            _config = parse_config(config)
+            if _config is not None:
+                node._overload_config = _config
+                node._config = node._config.__class__.from_dict(_config)
+        node._config.parse(node)
         return node
 
     @property
@@ -102,7 +105,7 @@ class BaseNode(object):
         def inspect_all_bases(cls: type):
             if cls == object:
                 return
-            if parser_flag == 'dataclass':
+            if PARSER_FLAG == 'dataclass':
                 for key, value in self._config.to_dict().items():
                     if isinstance(value['metadata']['existence'], bool) \
                             and value['metadata']['existence'] == True \
@@ -151,13 +154,13 @@ class BaseNode(object):
                                 metavar='',
                                 nargs=nargs,
                                 required=False)
-            elif parser_flag == 'comment':
+            elif PARSER_FLAG == 'comment':
                 for key, value in cls().comments.items():
                     if get_flag() in value['flags']:
                         self._parser.add_argument(
                             f'--{key}',
                             default=value['value'],
-                            type=type_dict[value['type']],
+                            type=type[value['value']],
                             help=
                             f"{value['description']} 默认值为: {value['value']}",
                             action=self.action,
@@ -197,7 +200,8 @@ class BaseNode(object):
                         else:
                             # TODO: 当此位置接受多个参数时，需要对多个参数采取的操作
                             pass
-
+                    if isinstance(values, Sequence) and len(values) == 1:
+                        values = values[0]
                     setattr(node, variable_name, values)
                     setattr(namespace, variable_name, values)
                 else:
@@ -321,29 +325,3 @@ class BaseNode(object):
                                                 'default_factory'),
                         metadata=getattr(field_value, 'metadata'))
         return fields
-
-    def __getattribute__(self, item: str):
-        if not item.startswith('_'):
-            try:
-                return object.__getattribute__(self, item)
-            except AttributeError:
-                try:
-                    return global_config[item]
-                except KeyError:
-                    return None
-        else:
-            return object.__getattribute__(self, item)
-
-    def __setattr__(self, key, value):
-        if not key.startswith('_') \
-                and type(value) in [t for t in type_dict.values()]:
-            user_provided_argument: Optional[Tuple[str]] = \
-                inspect_function_calling('__init__')
-            if user_provided_argument is None:
-                # 本函数在 __init__ 之外被调用
-                object.__setattr__(self, key, value)
-            else:
-                # 本函数在 __init__ 中被调用
-                if key in user_provided_argument:
-                    object.__setattr__(self, key, value)
-        object.__setattr__(self, key, value)

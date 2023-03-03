@@ -7,34 +7,44 @@ parser: ArgumentParser = ArgumentParser(prog='fastie-train',
 
 FASTIE_HOME = f"{os.environ['HOME']}/.fastie"
 
-flag = None
-parser_flag = 'dataclass'  # "comment"
-config_flag = 'dict'  # class
+FLAG = None
+PARSER_FLAG = 'dataclass'  # "comment"
+CONFIG_FLAG = 'dict'  # class
+
+task = None
+
+
+def get_task():
+    return task
+
+
+def set_task(_task):
+    global task
+    task = _task
+
+
+dataset = None
+
+
+def get_dataset():
+    return dataset
+
+
+def set_dataset(_dataset):
+    global dataset
+    dataset = _dataset
 
 
 def set_flag(_flag: str = 'train'):
-    global flag
-    if _flag not in ['train', 'eval', 'infer', 'interact', 'web']:
+    global FLAG
+    if _flag not in ['train', 'eval', 'infer', 'interact', 'server']:
         _flag = 'train'
     else:
-        flag = _flag
+        FLAG = _flag
 
 
 def get_flag():
-    return flag
+    return FLAG
 
 
-type_dict = {
-    'int': int,
-    'bool': bool,
-    'float': float,
-    'str': str,
-    'list': list,
-    'dict': dict
-}
-
-global_config: dict = dict()
-
-
-def get_config():
-    return global_config
+sample_type = [int, bool, float, str, list, dict, set, tuple, type(None)]

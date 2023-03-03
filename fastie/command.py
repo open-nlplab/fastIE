@@ -1,4 +1,3 @@
-import os
 import sys
 from argparse import ArgumentParser, Namespace, Action
 from dataclasses import dataclass, field
@@ -6,59 +5,16 @@ from typing import Sequence, Optional
 
 from fastie.controller import CONTROLLER, Interactor
 from fastie.dataset import DATASET
-from fastie.envs import set_flag, FASTIE_HOME, global_config, \
-    parser, logger
+from fastie.envs import set_flag, FASTIE_HOME, parser, logger
 from fastie.exhibition import Exhibition
 from fastie.tasks import NER, EE, RE
-from fastie.utils import Config, set_config
+from fastie.utils import Config, parse_config
 from fastie.node import BaseNodeConfig, BaseNode
 from fastie.chain import Chain
 
 chain = Chain([])
 
-
-def parse_config():
-    keys = list(global_config.keys())
-    for key in keys:
-        if key == 'task':
-            obj_cls = None
-            task, solution = global_config[key].split('/')
-            if task.lower() == 'ner':
-                obj_cls = NER.get(solution)
-            elif task.lower() == 'ee':
-                obj_cls = EE.get(solution)
-            elif task.lower() == 're':
-                obj_cls = RE.get(solution)
-            else:
-                logger.error(
-                    f'The task type `{task}` you selected does not exist. \n',
-                    'You can only choose in `ner`, `ee`, or `re`. ')
-                exit(0)
-            if obj_cls is not None:
-                obj = obj_cls()
-                _ = chain + obj
-            else:
-                logger.warn(
-                    f'The solution `{solution}` you selected does not exist. ')
-                logger.info('Here are the optional options: \n')
-                sys.argv.append('-t')
-                sys.argv.append('-l')
-                Exhibition.intercept()
-                exit(0)
-        elif key == 'dataset':
-            obj_cls = DATASET.get(global_config[key])
-            if obj_cls is None:
-                logger.warn(
-                    f'The dataset `{global_config[key]}` you selected does '
-                    f'not exist. ')
-                logger.info('Here are the optional options: \n')
-                sys.argv.append('-d')
-                sys.argv.append('-l')
-                Exhibition.intercept()
-                exit(0)
-            else:
-                obj = obj_cls()
-                _ = chain + obj
+global_config = dict()
 
 
 @dataclass
@@ -190,7 +146,8 @@ class CommandNode(BaseNode):
                         obj = obj_cls()
                         _ = chain + obj
                 elif variable_name == 'config':
-                    if set_config(values) is None:
+                    global_config = parse_config(values)
+                    if global_config is None:
                         logger.warn(
                             f'The config file `{values}` you selected does not '
                             f'exist. ')
@@ -201,21 +158,6 @@ class CommandNode(BaseNode):
                         exit(0)
 
         return ParseAction
-
-
-def intercept_config():
-    for i in range(len(sys.argv)):
-        if sys.argv[i] == '-c' or sys.argv[i] == '--config':
-            if i < len(sys.argv) - 1:
-                if os.path.exists(sys.argv[i + 1]):
-                    config = Config.fromfile(sys.argv[i])['Config']()
-                    set_config(config)
-                elif os.path.exists(os.path.join(FASTIE_HOME,
-                                                 sys.argv[i + 1])):
-                    config = Config.fromfile(
-                        os.path.join(FASTIE_HOME, sys.argv[i]))['Config']()
-                    set_config(config)
-                break
 
 
 def interact_handler():
@@ -237,8 +179,6 @@ def interact_handler():
 
 def main():
     Exhibition.intercept()
-    # intercept_config()
-    # parse_config()
     if sys.argv[0].endswith('train'):
         _ = chain + CONTROLLER.get('trainer')()
         set_flag('train')

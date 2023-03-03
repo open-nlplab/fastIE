@@ -5,15 +5,21 @@ from typing import Union, Optional, Set, Tuple
 from fastNLP import Vocabulary, Instance
 from fastNLP.io import DataBundle
 
-from fastie.envs import get_flag, global_config, config_flag, FASTIE_HOME, \
-    logger
+from fastie.envs import get_flag, CONFIG_FLAG, FASTIE_HOME, logger, set_task, \
+    set_dataset
 from fastie.utils.config import Config
 
 
-def generate_tag_vocab(data_bundle: DataBundle) -> Optional[Vocabulary]:
+def generate_tag_vocab(
+        data_bundle: DataBundle,
+        unknown: Optional[str] = 'O',
+        base_mapping: Optional[dict] = None) -> Optional[Vocabulary]:
     """根据数据集中的已标注样本构建 tag_vocab.
 
     :param data_bundle: :class:`~fastNLP.io.DataBundle` 对象
+    :param unknown: 未知标签的标记
+    :param base_mapping: 基础映射，例如 ``{"label": 0}`` 或者 ``{0: "label"}``
+        函数将在确保 ``base_mapping`` 中的标签不会被覆盖改变的前提下构造 vocab
     :return: 如果存在已标注样本，则返回构造成功的 :class:`~fastNLP.Vocabulary` 对象，
         否则返回空的 ``None``
     """
@@ -21,7 +27,7 @@ def generate_tag_vocab(data_bundle: DataBundle) -> Optional[Vocabulary]:
             or 'dev' in data_bundle.datasets.keys() \
             or 'test' in data_bundle.datasets.keys():
         # 存在已标注样本
-        tag_vocab = Vocabulary()
+        tag_vocab = Vocabulary(padding=None, unknown=unknown)
 
         def construct_vocab(instance: Instance):
             # 当然，用来 infer 的数据集是无法构建的，这里判断一下
@@ -31,8 +37,31 @@ def generate_tag_vocab(data_bundle: DataBundle) -> Optional[Vocabulary]:
             return instance
 
         data_bundle.apply_more(construct_vocab)
+        if base_mapping:
+            base_word2idx = {}
+            base_idx2word = {}
+            if isinstance(base_mapping, dict) and isinstance(
+                    list(base_mapping.keys())[0], str):
+                base_word2idx = base_mapping
+                base_idx2word = \
+                    {word: idx for idx, word in base_word2idx.items()}
+            elif isinstance(base_mapping, dict) and isinstance(
+                    list(base_mapping.keys())[0], int):
+                base_idx2word = base_mapping
+                base_word2idx = \
+                    {word: idx for idx, word in base_idx2word.items()}
+            for key, value in tag_vocab.word2idx.keys():
+                if key not in base_word2idx.keys():
+                    # 线性探测法
+                    while value in base_idx2word.keys():
+                        value += 1
+                    base_word2idx[key] = value
+                    base_idx2word[value] = key
+            tag_vocab._word2idx = base_word2idx
+            tag_vocab._idx2word = base_idx2word
         return tag_vocab
     else:
+        # 无以标注样本
         return None
 
 
@@ -48,11 +77,11 @@ def check_loaded_tag_vocab(
 
         * 为 ``1`` 时
          表示一致或可矫正的错误，可以直接使用返回的 ``tag_vocab``
-        * 为 ``0`` 时
+        * 为 ``-1`` 时
          表示出现冲突且无法矫正，请抛弃加载得到的 ``loaded_tag_vocab``
          使用返回的 ``tag_vocab``
-        * 为 ``-1`` 时
-         无可用的 ``tag_vocab``，程序即将退出
+        * 为 ``0`` 时
+         无可用的 ``tag_vocab``，将直接输出 idx
     """
     idx2word = None
     word2idx = None
@@ -68,50 +97,58 @@ def check_loaded_tag_vocab(
             idx2word = {idx: word for word, idx in word2idx.items()}
     if loaded_tag_vocab is None and tag_vocab is None:
         logger.warn('Error: No tag dictionary is available. ')
-        return -1, None
+        return 0, None
     if loaded_tag_vocab is None and tag_vocab is not None:
         return 1, tag_vocab
     if loaded_tag_vocab is not None and tag_vocab is None:
         tag_vocab = Vocabulary()
         tag_vocab._word2idx = word2idx
         tag_vocab._idx2word = idx2word
-        return 1, tag_vocab
+        return 0, tag_vocab
     if loaded_tag_vocab is not None and tag_vocab is not None:
         if get_flag() != 'infer':
             if word2idx != tag_vocab.word2idx:
-                if set(word2idx.keys()) == set(tag_vocab.word2idx.keys()
-                                               ):  # type: ignore [union-attr]
+                if set(word2idx.keys()) \
+                        == set(
+                    tag_vocab.word2idx.keys() # type: ignore [union-attr]
+                                               ):
                     tag_vocab._word2idx.update(word2idx)
                     tag_vocab._idx2word.update(idx2word)
                     return 1, tag_vocab
                 else:
                     logger.warn(
                         'The tag dictionary '
-                        f"[{','.join(list(tag_vocab._word2idx.keys()))}]"  # type: ignore [union-attr]
+                        f"`\n[{','.join(list(tag_vocab._word2idx.keys()))}]`\n"  # type: ignore [union-attr]
                         ' loaded from the model is not the same as the '
                         'tag dictionary '
-                        f"[{','.join(list(word2idx.keys()))}]"
+                        f"\n`[{','.join(list(word2idx.keys()))}]`\n"
                         ' built from the dataset, so the loaded model may be '
                         'discarded')
-                    return 0, tag_vocab
+                    return -1, tag_vocab
             else:
                 return 1, tag_vocab
         else:
             tag_vocab._word2idx = word2idx
             tag_vocab._idx2word = idx2word
             return 1, tag_vocab
+    return 0, None
 
 
-def set_config(_config: object) -> Optional[dict]:
+def parse_config(_config: object) -> Optional[dict]:
+    config = dict()
     if isinstance(_config, dict):
         for key, value in _config.items():
+            if key == "task":
+                set_task(value)
+            if key == "dataset":
+                set_dataset(value)
             if not key.startswith('_'):
-                global_config[key] = value
-        return global_config
+                config[key] = value
+        return config
     elif isinstance(_config, str):
         if os.path.exists(_config) and os.path.isfile(
                 _config) and _config.endswith('.py'):
-            if config_flag == 'dict':
+            if CONFIG_FLAG == 'dict':
                 config_dict = reduce(lambda x, y: {
                     **x,
                     **y
@@ -120,26 +157,30 @@ def set_config(_config: object) -> Optional[dict]:
                     for value in Config.fromfile(_config)._cfg_dict.values()
                     if isinstance(value, dict)
                 ])
-                return set_config(config_dict)
-            elif config_flag == 'class':
+                return parse_config(config_dict)
+            elif CONFIG_FLAG == 'class':
                 config_obj = Config.fromfile(_config)._cfg_dict.Config()
                 config_dict = {
                     key: getattr(config_obj, key)
                     for key in dir(config_obj) if not key.startswith('_')
                 }
-                return set_config(config_dict)
+                return parse_config(config_dict)
         else:
             for root, dirs, files in os.walk(
                     os.path.join(FASTIE_HOME, 'configs')):
                 for file in files:
                     if _config == file.replace('.py', ''):
-                        return set_config(os.path.join(root, file))
+                        return parse_config(os.path.join(root, file))
         return None
     else:
         for key in _config.__dir__():
+            if key == "task":
+                set_task(getattr(_config, key))
+            if key == "dataset":
+                set_dataset(getattr(_config, key))
             if not key.startswith('_'):
-                global_config[key] = getattr(_config, key)
-        return global_config
+                config[key] = getattr(_config, key)
+        return config
 
 
 def inspect_function_calling(func_name: str) -> Optional[Set[str]]:

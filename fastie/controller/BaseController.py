@@ -1,5 +1,5 @@
-from fastie.node import BaseNode
-from fastie.utils import Registry
+from fastie.node import BaseNode, BaseNodeConfig
+from fastie.utils import Registry, parse_config
 from fastie.tasks import build_task
 from fastie.dataset.build_dataset import build_dataset
 
@@ -29,10 +29,11 @@ class BaseController(BaseNode):
         else:
             # 下面的是直接传入数据集的情况，需要根据 global_config 构建 task
             data_bundle = build_dataset(parameters_or_data)
-            parameters_or_data = build_task()(data_bundle)
+            parameters_or_data = build_task(self._overload_config)(data_bundle)
             if isinstance(parameters_or_data, Generator):
                 parameters_or_data = next(parameters_or_data)
             return parameters_or_data
+
 
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)

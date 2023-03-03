@@ -1,29 +1,32 @@
 from fastie.tasks import NER, RE, EE
-from fastie.envs import global_config
-from fastie.utils import set_config
-from fastie.node import BaseNodeConfig
+from fastie.envs import get_task
+from fastie.utils.utils import parse_config
 
 from typing import Union, Optional
 
 from copy import deepcopy
 
 
-def build_task(config: Optional[Union[dict, BaseNodeConfig]] = None):
+def build_task(_config: Optional[Union[dict, str]] = None):
     """Build the task you want to use from the config you give or the global
     config.
 
-    :param config:
+    :param _config:
     :return:
     """
-    if config is None:
-        config = global_config
-    origin_global_config = deepcopy(global_config)
-    if not hasattr(config, 'task') and 'task' not in config.keys():
-        raise ValueError('The task you want to use is not specified.')
-    if hasattr(config, 'task'):
-        task, solution = getattr(config, 'task').split('/')
-    elif 'task' in config.keys():
-        task, solution = config['task'].split('/')
+    task, solution = '', ''
+    if _config is not None:
+        _config = parse_config(_config)
+    if not get_task():
+        if _config is None:
+            raise ValueError('The task you want to use is not specified.')
+        else:
+            if isinstance(_config, dict) and 'task' not in _config.keys():
+                raise ValueError('The task you want to use is not specified.')
+            else:
+                task, solution = _config['task'].split('/')
+    else:
+        task, solution = get_task().split('/')
     if task.lower() == 'ner':
         task_cls = NER.get(solution)
     elif task.lower() == 're':
@@ -33,6 +36,5 @@ def build_task(config: Optional[Union[dict, BaseNodeConfig]] = None):
     if task_cls is None:
         raise ValueError(
             f'The task {task} with solution {solution} is not supported.')
-    task_obj = task_cls()
-    set_config(origin_global_config)
+    task_obj = task_cls.from_config(_config)
     return task_obj

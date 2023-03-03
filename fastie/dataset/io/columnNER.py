@@ -10,7 +10,7 @@ from fastNLP import DataSet, Instance, Vocabulary
 from fastNLP.io import Loader, DataBundle
 
 from fastie.dataset.BaseDataset import DATASET, BaseDatasetConfig, BaseDataset
-from fastie.envs import get_config, logger
+from fastie.envs import logger
 
 
 @dataclass
@@ -115,23 +115,4 @@ class ColumnNER(BaseDataset):
             for file in ('train', 'dev', 'test', 'generate')
             if os.path.exists(os.path.join(self.folder, f'{file}.txt'))
         })
-        tagged_datasets = {
-            key: value
-            for key, value in data_bundle.datasets.items() if key != 'generate'
-        }
-        if len(tagged_datasets.keys()) > 0:
-            tag_vocab = Vocabulary()
-            if 'vocabulary' in get_config().keys():
-                if get_config()['vocabulary'] != tag_vocab._word2idx:
-                    logger.warn(
-                        'Dictionaries generated from the dataset '
-                        'are not the same as those in the provided preset,\n'
-                        'and will be preferred to dictionaries generated from '
-                        'the dataset')
-            tag_vocab.from_dataset(tagged_datasets, field_name='tags')
-            tag_vocab.index_dataset(tagged_datasets,
-                                    field_name='tags',
-                                    new_field_name='target')
-            self.tag_vocab = tag_vocab._word2idx
-        data_bundle.set_vocab(tag_vocab, 'tag')
         return data_bundle
