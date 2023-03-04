@@ -2,20 +2,15 @@ from dataclasses import dataclass, field
 
 import numpy as np
 from datasets import load_dataset
-from fastNLP import DataSet, Instance, Vocabulary
+from fastNLP import DataSet, Instance
 from fastNLP.io import DataBundle
 
 from fastie.dataset.BaseDataset import BaseDataset, DATASET, BaseDatasetConfig
-from fastie.envs import logger
 
 
 @dataclass
 class Conll2003Config(BaseDatasetConfig):
-    tag: str = field(default='ner',
-                     metadata=dict(
-                         help='Which fields in the dataset you want to use. '
-                         'Select among: ner, pos, chunk.',
-                         existence=['train', 'evaluate']))
+    pass
 
 
 @DATASET.register_module('conll2003')
@@ -23,25 +18,20 @@ class Conll2003(BaseDataset):
     """The shared task of CoNLL-2003 concerns language-independent named entity
     recognition."""
     _config = Conll2003Config()
-    _help = 'Legacy dataset: conll2003. Refer to ' \
+    _help = 'Conll2003 for NER task. Refer to ' \
             'https://huggingface.co/datasets/conll2003 for more information.'
 
     def __init__(self,
-                 tag: str = 'ner',
                  cache: bool = False,
                  refresh_cache: bool = False,
                  **kwargs):
         super(Conll2003, self).__init__(cache=cache,
                                         refresh_cache=refresh_cache,
                                         **kwargs)
-        self.tag = tag
 
     def run(self):
         raw_dataset = load_dataset('conll2003')
         datasets = {}
-        if self.tag not in ('ner'):
-            logger.error('Tag must be `ner`.')
-            exit(1)
         tag2idx = {
             'ner': {
                 'O': 0,
@@ -129,36 +119,48 @@ class Conll2003(BaseDataset):
                 'I-VP': 22
             }
         }
-        idx2tag = {'ner': {}}
-        for i in np.arange(1, max(len(list(tag2idx['ner'].keys())), -1)):
-            if i < len(list(tag2idx['ner'].keys())) and i % 2 == 0:
-                idx2tag['ner'][i - 1] = list(
-                    tag2idx['ner'].keys())[i].split('-')[1]
-                idx2tag['ner'][i] = list(
-                    tag2idx['ner'].keys())[i].split('-')[1]
+        idx2tag = {'ner': {}, 'pos': {}, 'chunk': {}}
+        idx2tag['ner'] = {v: k for k, v in tag2idx['ner'].items()}
+        idx2tag['pos'] = {v: k for k, v in tag2idx['pos'].items()}
+        idx2tag['chunk'] = {v: k for k, v in tag2idx['chunk'].items()}
         for split, dataset in raw_dataset.items():
             split = split.replace('validation', 'dev')
             datasets[split] = DataSet()
             for sample in dataset:
                 instance = Instance()
                 instance.add_field('tokens', sample['tokens'])
-                if self.tag == 'ner':
-                    entity_mentions = []
-                    span = []
-                    for i in np.arange(len(sample['ner_tags'])):
-                        if sample['ner_tags'][i] != 0:
+                entity_mentions = []
+                span = []
+                current_tag = 0
+                for i in np.arange(len(sample['ner_tags'])):
+                    if sample['ner_tags'][i] != 0:
+                        if len(span) == 0:
+                            current_tag = sample['ner_tags'][i]
                             span.append(i)
                             continue
                         else:
-                            if len(span) > 0:
-                                entity_mentions.append((span, idx2tag['ner'][
-                                    sample['ner_tags'][span[0]]]))
-                                span = []
-                    if len(span) > 0:
-                        entity_mentions.append(
-                            (span,
-                             idx2tag['ner'][sample['ner_tags'][span[0]]]))
-                    instance.add_field('entity_mentions', entity_mentions)
+                            if current_tag == sample['ner_tags'][i]:
+                                span.append(i)
+                                continue
+                            else:
+                                entity_mentions.append(
+                                    (span,
+                                     idx2tag['ner'][current_tag]))
+                                span = [i]
+                                current_tag = sample['ner_tags'][i]
+                                continue
+                    else:
+                        if len(span) > 0:
+                            entity_mentions.append((span, idx2tag['ner'][
+                                sample['ner_tags'][span[0]]]))
+                            span = []
+                if len(span) > 0:
+                    entity_mentions.append(
+                        (span,
+                         idx2tag['ner'][sample['ner_tags'][span[0]]]))
+                instance.add_field('entity_mentions', entity_mentions)
+                instance.add_field('pos', sample['pos_tags'])
+                instance.add_field('chunk', sample['chunk_tags'])
                 datasets[split].append(instance)
         data_bundle = DataBundle(datasets=datasets)
         return data_bundle

@@ -174,6 +174,7 @@ def interact_handler():
             break
         sentence = Sentence(sentence=sentence)
         _ = chain + sentence
+        chain[1]._on_dataset_preprocess_cache = None
         chain.run()
 
 

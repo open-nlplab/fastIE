@@ -50,7 +50,7 @@ def generate_tag_vocab(
                 base_idx2word = base_mapping
                 base_word2idx = \
                     {word: idx for idx, word in base_idx2word.items()}
-            for key, value in tag_vocab.word2idx.keys():
+            for key, value in tag_vocab.word2idx.items():
                 if key not in base_word2idx.keys():
                     # 线性探测法
                     while value in base_idx2word.keys():
@@ -104,14 +104,19 @@ def check_loaded_tag_vocab(
         tag_vocab = Vocabulary()
         tag_vocab._word2idx = word2idx
         tag_vocab._idx2word = idx2word
-        return 0, tag_vocab
+        return 1, tag_vocab
     if loaded_tag_vocab is not None and tag_vocab is not None:
         if get_flag() != 'infer':
             if word2idx != tag_vocab.word2idx:
                 if set(word2idx.keys()) \
                         == set(
-                    tag_vocab.word2idx.keys() # type: ignore [union-attr]
-                                               ):
+                    tag_vocab.word2idx.keys()): # type: ignore [union-attr]
+                    tag_vocab._word2idx.update(word2idx)
+                    tag_vocab._idx2word.update(idx2word)
+                    return 1, tag_vocab
+                elif set(
+                        tag_vocab.word2idx.keys() # type: ignore [union-attr]
+                ).issubset(set(tag_vocab.word2idx.keys())):
                     tag_vocab._word2idx.update(word2idx)
                     tag_vocab._idx2word.update(idx2word)
                     return 1, tag_vocab

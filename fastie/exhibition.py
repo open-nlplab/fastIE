@@ -1,3 +1,9 @@
+"""
+FastIE 展示模块
+"""
+
+__all__ = ['Exhibition']
+
 import sys
 import os
 
@@ -10,7 +16,10 @@ from fastie.utils import Config
 
 
 class Exhibition:
-    """展示模块."""
+    """
+    FastIE 展示模块,
+    主要用来在命令行模式中展示 FastIE 现有的 ``dataset``, ``task`` 和 ``config``
+    """
 
     @property
     def NER(self):

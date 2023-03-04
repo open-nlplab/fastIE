@@ -10,20 +10,20 @@ from fastNLP.io import DataBundle
 
 
 def build_dataset(
-    dataset: Optional[Union[str, Sequence[str], dict, Sequence[dict], DataSet,
-                            DataBundle]]
+        dataset: Optional[Union[str, Sequence[str], dict, Sequence[dict],
+        DataSet, DataBundle]],
+        dataset_config: Optional[dict] = None
 ) -> DataBundle:
     data_bundle = DataBundle()
-    if isinstance(dataset, str):
-        _config = parse_config(dataset)
-        if _config and 'dataset' in _config.keys():
-            data_bundle = DATASET.get(
-                _config['dataset']).from_config(_config).run()
     if dataset is None:
         if not get_dataset():
             raise ValueError('The dataset you want to use is not specified.')
         else:
-            data_bundle = DATASET.get(get_dataset())().run()()
+            if dataset_config is None:
+                data_bundle = DATASET.get(get_dataset())().run()
+            else:
+                data_bundle = DATASET.get(get_dataset())(
+                    **parse_config(dataset_config)).run()
     else:
         if isinstance(dataset, str) or isinstance(dataset, Sequence) \
                 and isinstance(dataset[0], str):

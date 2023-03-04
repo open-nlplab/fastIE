@@ -1,3 +1,10 @@
+"""
+FastIE 节点基类，继承该类的子类将具有以下功能：
+    * 自动将配置类中的配置项注册为 ``argparse`` 解析器的参数，并在解析时自动赋值
+    * 从 ``dict`` 类型的配置对象或者配置文件实例化
+"""
+__all__ = ['BaseNodeConfig', 'BaseNode']
+
 import inspect
 import re
 import zipfile
@@ -11,7 +18,10 @@ from fastie.utils.utils import parse_config
 
 @dataclass
 class BaseNodeConfig:
-    """``fastie`` 节点配置基类."""
+    """
+    FastIE 节点配置基类
+
+    """
 
     def parse(self, obj: object):
         """将当前对象的属性值赋值给obj.
@@ -40,7 +50,8 @@ class BaseNodeConfig:
 
     @classmethod
     def from_dict(cls, _config: dict):
-        """从字典中创建配置.
+        """
+        从字典中创建配置.
 
         :param _config: ``dict`` 类型的配置
         :return: :class:`BaseNodeConfig` 类型的配置
@@ -52,7 +63,8 @@ class BaseNodeConfig:
         return config
 
     def keys(self):
-        """获取当前配置的所有属性名.
+        """
+        获取当前配置的所有属性名.
 
         :return: ``list`` 类型的属性名列表
         """
@@ -68,7 +80,14 @@ class BaseNodeConfig:
 
 
 class BaseNode(object):
-    """``fastie`` 节点基类."""
+    """
+    FastIE 节点基类
+
+    继承该类的子类将具有以下功能：
+        * 自动将配置类中的配置项注册为 ``argparse`` 解析器的参数
+        * 从 ``dict`` 类型的配置对象或者配置文件实例化
+
+    """
     _config = BaseNodeConfig()
     _help = 'The base class of all node objects'
 
@@ -79,7 +98,9 @@ class BaseNode(object):
 
     @classmethod
     def from_config(cls, config: Union[BaseNodeConfig, str, dict]):
-        """从配置文件或配置对象中创建节点.
+        """
+
+        从配置文件或配置对象中创建节点.
 
         :param config: 可以为 ``*.py`` 文件路径或者 :class:`BaseNodeConfig` 类型的对象
         :return: :class:`BaseNode` 类型的节点
@@ -97,7 +118,8 @@ class BaseNode(object):
 
     @property
     def parser(self):
-        """根据当前节点的配置类构造当前节点的 ``argparse`` 解析器.
+        """
+        根据当前节点的配置类构造当前节点的 ``argparse`` 解析器.
 
         :return: :class:`argparse.ArgumentParser` 类型的解析器
         """
@@ -176,6 +198,7 @@ class BaseNode(object):
     def action(self) -> Type[Action]:
         """
         根据当前节点的配置类构造当前节点的 ``argparse`` 解析器的 ``action`` 参数
+
         :return: :class:`argparse.Action` 类型的 ``action`` 参数
         """
         node = self
@@ -310,6 +333,7 @@ class BaseNode(object):
     def fields(self) -> dict:
         """
         获取当前节点配置类的所有字段
+
         :return: ``dict`` 类型的字段信息
         """
         fields: Dict[str, dict] = dict()

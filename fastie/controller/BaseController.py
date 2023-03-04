@@ -28,7 +28,8 @@ class BaseController(BaseNode):
             return parameters_or_data
         else:
             # 下面的是直接传入数据集的情况，需要根据 global_config 构建 task
-            data_bundle = build_dataset(parameters_or_data)
+            data_bundle = build_dataset(parameters_or_data,
+                                        dataset_config=self._overload_config)
             parameters_or_data = build_task(self._overload_config)(data_bundle)
             if isinstance(parameters_or_data, Generator):
                 parameters_or_data = next(parameters_or_data)

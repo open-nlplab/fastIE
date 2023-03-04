@@ -12,7 +12,7 @@ from fastNLP.transformers.torch.models.bert import BertModel, BertConfig, \
     BertTokenizer
 from torch import nn
 
-from fastie.envs import get_flag
+from fastie.envs import logger
 from fastie.tasks.BaseTask import BaseTask, BaseTaskConfig, NER
 from fastie.utils.utils import generate_tag_vocab, check_loaded_tag_vocab
 
@@ -55,14 +55,16 @@ class Model(nn.Module):
         for b in range(features.shape[0]):
             logits = F.softmax(
                 features[b][offset_mask[b].nonzero(), :].squeeze(1), dim=1)
+            target = torch.zeros(logits.shape[0]).to(
+                features.device)
             for entity_mention in entity_mentions[b]:
-                target = torch.zeros(self.num_labels).to(features.device)
-                target[entity_mention[1]] = 1
-                for i in range(logits.shape[0]):
-                    if i in entity_mention[0]:
-                        loss += F.binary_cross_entropy(logits[i], target)
-                    else:
-                        loss += F.binary_cross_entropy(logits[i], 1 - target)
+                for i in entity_mention[0]:
+                    target[i] = entity_mention[1]
+            for i in range(logits.shape[0]):
+                one_hot_target = torch.zeros(self.num_labels).to(
+                    features.device)
+                one_hot_target[int(target[i])] = 1
+                loss += F.binary_cross_entropy(logits[i], one_hot_target)
         return dict(loss=loss)
 
     def evaluate_step(self, input_ids, attention_mask, offset_mask,
@@ -169,6 +171,21 @@ class BertNER(BaseTask):
                                       **kwargs)
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.lr = lr
+
+    def on_generate_and_check_tag_vocab(self,
+                                        data_bundle: DataBundle,
+                                        state_dict: Optional[dict]) -> Optional[Vocabulary]:
+        tag_vocab = None
+        if state_dict is not None and 'tag_vocab' in state_dict:
+            tag_vocab = state_dict['tag_vocab']
+        signal, tag_vocab = check_loaded_tag_vocab(
+            tag_vocab, generate_tag_vocab(data_bundle, unknown=None,
+                                          base_mapping={0: "O"}))
+        if signal == -1:
+            logger.warning(f'It is detected that the model label vocabulary '
+                           f'conflicts with the dataset label vocabulary, '
+                           f'so the model loading may fail. ')
+        return tag_vocab
 
     def on_dataset_preprocess(self, data_bundle: DataBundle,
                               tag_vocab: Vocabulary,

@@ -1,49 +1,46 @@
-"""这个类还没写好，请勿参考."""
+"""
+这个类还没写好，请勿参考.
+"""
 
 from dataclasses import dataclass, field
 
 from datasets import load_dataset
-from fastNLP import DataSet, Instance, Vocabulary
+from fastNLP import DataSet, Instance
 from fastNLP.io import DataBundle
 
-from fastie.envs import get_flag
+import numpy as np
+
 from .. import DATASET, BaseDataset, BaseDatasetConfig
 
 
 @dataclass
-class WikiannLoaderConfig(BaseDatasetConfig):
+class WikiannConfig(BaseDatasetConfig):
     language: str = field(
-        default='zh',
+        default='en',
         metadata=dict(
             help=
-            'Select which language subset in wikiann. Refer to https://huggingface.co/datasets/wikiann .',
+            'Select which language subset in wikiann. '
+            'Refer to https://huggingface.co/datasets/wikiann .',
             existence=True))
 
 
 @DATASET.register_module('wikiann')
-class WikiannLoader(BaseDataset):
-    """Wikiann."""
-    _config = WikiannLoaderConfig()
+class Wikiann(BaseDataset):
+    """
+    Wikiann 为 NER 数据集，由 172 语言的子集组成，标签包括 LOC, ORG, PER。
 
-    def __init__(self, language: str = 'zh', **kwargs):
+    :param language: 选择哪个语言的子集
+        参考 https://huggingface.co/datasets/wikiann
+    """
+    _config = WikiannConfig()
+
+    def __init__(self, language: str = 'en', **kwargs):
         BaseDataset.__init__(self, **kwargs)
         self.language = language
 
     def run(self):
-        if self.language == 'zh':
-            raw_dataset = load_dataset('wikiann', 'zh')
-        datasets = {}
-        if get_flag() == 'train' or get_flag() == 'evaluation':
-            datasets['train'] = DataSet([
-                Instance(tokens=sample['tokens'], ner_tags=sample['ner_tags'])
-                for sample in raw_dataset['train']
-            ])
-            datasets['evaluate'] = DataSet([
-                Instance(tokens=sample['tokens'], ner_tags=sample['ner_tags'])
-                for sample in raw_dataset['validation']
-            ])
-        data_bundle = DataBundle(datasets=datasets)
-        word2idx = {
+        raw_dataset = load_dataset('wikiann', self.language)
+        tag2idx = {
             'O': 0,
             'B-PER': 1,
             'I-PER': 2,
@@ -52,9 +49,46 @@ class WikiannLoader(BaseDataset):
             'B-LOC': 5,
             'I-LOC': 6
         }
-        idx2word = {value: key for key, value in word2idx.items()}
-        ner_vocab = Vocabulary()
-        ner_vocab._word2idx = word2idx
-        ner_vocab._idx2word = idx2word
-        data_bundle.set_vocab(ner_vocab, 'ner')
+        idx2tag = {value: key for key, value in tag2idx.items()}
+        datasets = {}
+
+        for split, dataset in raw_dataset.items():
+            split = split.replace('validation', 'dev')
+            datasets[split] = DataSet()
+            for sample in dataset:
+                instance = Instance()
+                instance.add_field('tokens', sample['tokens'])
+                entity_mentions = []
+                span = []
+                current_tag = 0
+                for i in np.arange(len(sample['ner_tags'])):
+                    if sample['ner_tags'][i] != 0:
+                        if len(span) == 0:
+                            current_tag = sample['ner_tags'][i]
+                            span.append(i)
+                            continue
+                        else:
+                            if current_tag == sample['ner_tags'][i]:
+                                span.append(i)
+                                continue
+                            else:
+                                entity_mentions.append(
+                                    (span,
+                                     idx2tag[current_tag]))
+                                span = [i]
+                                current_tag = sample['ner_tags'][i]
+                                continue
+                    else:
+                        if len(span) > 0:
+                            entity_mentions.append((span, idx2tag[
+                                sample['ner_tags'][span[0]]]))
+                            span = []
+                if len(span) > 0:
+                    entity_mentions.append(
+                        (span,
+                         idx2tag[sample['ner_tags'][span[0]]]))
+                instance.add_field('entity_mentions', entity_mentions)
+                datasets[split].append(instance)
+
+        data_bundle = DataBundle(datasets=datasets)
         return data_bundle
