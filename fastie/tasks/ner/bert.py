@@ -55,8 +55,7 @@ class Model(nn.Module):
         for b in range(features.shape[0]):
             logits = F.softmax(
                 features[b][offset_mask[b].nonzero(), :].squeeze(1), dim=1)
-            target = torch.zeros(logits.shape[0]).to(
-                features.device)
+            target = torch.zeros(logits.shape[0]).to(features.device)
             for entity_mention in entity_mentions[b]:
                 for i in entity_mention[0]:
                     target[i] = entity_mention[1]
@@ -172,15 +171,17 @@ class BertNER(BaseTask):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.lr = lr
 
-    def on_generate_and_check_tag_vocab(self,
-                                        data_bundle: DataBundle,
-                                        state_dict: Optional[dict]) -> Optional[Vocabulary]:
+    def on_generate_and_check_tag_vocab(
+            self, data_bundle: DataBundle,
+            state_dict: Optional[dict]) -> Optional[Vocabulary]:
         tag_vocab = None
         if state_dict is not None and 'tag_vocab' in state_dict:
             tag_vocab = state_dict['tag_vocab']
         signal, tag_vocab = check_loaded_tag_vocab(
-            tag_vocab, generate_tag_vocab(data_bundle, unknown=None,
-                                          base_mapping={0: "O"}))
+            tag_vocab,
+            generate_tag_vocab(data_bundle,
+                               unknown=None,
+                               base_mapping={0: 'O'}))
         if signal == -1:
             logger.warning(f'It is detected that the model label vocabulary '
                            f'conflicts with the dataset label vocabulary, '

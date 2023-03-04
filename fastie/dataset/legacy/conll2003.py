@@ -144,20 +144,19 @@ class Conll2003(BaseDataset):
                                 continue
                             else:
                                 entity_mentions.append(
-                                    (span,
-                                     idx2tag['ner'][current_tag]))
+                                    (span, idx2tag['ner'][current_tag]))
                                 span = [i]
                                 current_tag = sample['ner_tags'][i]
                                 continue
                     else:
                         if len(span) > 0:
-                            entity_mentions.append((span, idx2tag['ner'][
-                                sample['ner_tags'][span[0]]]))
+                            entity_mentions.append(
+                                (span,
+                                 idx2tag['ner'][sample['ner_tags'][span[0]]]))
                             span = []
                 if len(span) > 0:
                     entity_mentions.append(
-                        (span,
-                         idx2tag['ner'][sample['ner_tags'][span[0]]]))
+                        (span, idx2tag['ner'][sample['ner_tags'][span[0]]]))
                 instance.add_field('entity_mentions', entity_mentions)
                 instance.add_field('pos', sample['pos_tags'])
                 instance.add_field('chunk', sample['chunk_tags'])

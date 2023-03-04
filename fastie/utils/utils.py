@@ -108,21 +108,20 @@ def check_loaded_tag_vocab(
     if loaded_tag_vocab is not None and tag_vocab is not None:
         if get_flag() != 'infer':
             if word2idx != tag_vocab.word2idx:
-                if set(word2idx.keys()) \
-                        == set(
-                    tag_vocab.word2idx.keys()): # type: ignore [union-attr]
+                if set(word2idx.keys()) == set(  # type: ignore [union-attr]
+                        tag_vocab.word2idx.keys()
+                ):  # type: ignore [union-attr]
                     tag_vocab._word2idx.update(word2idx)
                     tag_vocab._idx2word.update(idx2word)
                     return 1, tag_vocab
-                elif set(
-                        tag_vocab.word2idx.keys() # type: ignore [union-attr]
-                ).issubset(set(tag_vocab.word2idx.keys())):
+                elif set(tag_vocab.word2idx.keys()  # type: ignore [union-attr]
+                         ).issubset(set(tag_vocab.word2idx.keys())):
                     tag_vocab._word2idx.update(word2idx)
                     tag_vocab._idx2word.update(idx2word)
                     return 1, tag_vocab
                 else:
                     logger.warn(
-                        'The tag dictionary '
+                        'The tag dictionary '  # type: ignore [union-attr]
                         f"`\n[{','.join(list(tag_vocab._word2idx.keys()))}]`\n"  # type: ignore [union-attr]
                         ' loaded from the model is not the same as the '
                         'tag dictionary '
@@ -143,9 +142,9 @@ def parse_config(_config: object) -> Optional[dict]:
     config = dict()
     if isinstance(_config, dict):
         for key, value in _config.items():
-            if key == "task":
+            if key == 'task':
                 set_task(value)
-            if key == "dataset":
+            if key == 'dataset':
                 set_dataset(value)
             if not key.startswith('_'):
                 config[key] = value
@@ -179,9 +178,9 @@ def parse_config(_config: object) -> Optional[dict]:
         return None
     else:
         for key in _config.__dir__():
-            if key == "task":
+            if key == 'task':
                 set_task(getattr(_config, key))
-            if key == "dataset":
+            if key == 'dataset':
                 set_dataset(getattr(_config, key))
             if not key.startswith('_'):
                 config[key] = getattr(_config, key)

@@ -185,7 +185,8 @@ class BaseTask(BaseNode):
         self._on_setup_model_cache: Any = None
         self._on_setup_optimizers_cache: Any = None
         self._on_setup_dataloader_cache: Any = None
-        self._on_setup_callbacks_cache: Any = None
+        self._on_setup_callbacks_cache: Union[Callback, Sequence[Callback]] \
+            = []
         self._on_setup_metrics_cache: Any = None
         self._on_setup_extra_fastnlp_parameters_cache: Any = None
         self._on_get_state_dict_cache: Any = None
@@ -407,7 +408,7 @@ class BaseTask(BaseNode):
                         raise RuntimeError(
                             'The model you are using does not '
                             'have a `inference_step` method, which '
-                            'is required for infering.')
+                            'is required for inferring.')
                 if not self._on_setup_optimizers_cache:
                     self._on_setup_optimizers_cache = \
                         self.on_setup_optimizers(
@@ -449,6 +450,12 @@ class BaseTask(BaseNode):
                         data_bundle=self._on_dataset_preprocess_cache,
                         tag_vocab=self._on_generate_and_check_tag_vocab_cache,
                         state_dict=self._on_get_state_dict_cache)
+                if isinstance(self._on_setup_callbacks_cache, Sequence):
+                    self._on_setup_callbacks_cache = \
+                        [*self._on_setup_callbacks_cache]
+                else:
+                    self._on_setup_callbacks_cache = \
+                        [self._on_setup_callbacks_cache]
                 parameters_or_data['callbacks'] = \
                     self._on_setup_callbacks_cache
                 self._on_setup_metrics_cache = \
@@ -528,8 +535,12 @@ class BaseTask(BaseNode):
                         model_save_fn=model_save_fn,
                         monitor=self.monitor if self.monitor != '' else list(
                             self._on_setup_metrics_cache.keys())[0])
-                    parameters_or_data['callback'] = \
+                    if self._on_setup_callbacks_cache is not None:
                         self._on_setup_callbacks_cache.append(callback)
+                        parameters_or_data['callbacks'] = \
+                            self._on_setup_callbacks_cache
+                    else:
+                        parameters_or_data['callbacks'] = [callback]
                 # 训练轮数
                 parameters_or_data['n_epochs'] = self.epochs
                 # 混合精度

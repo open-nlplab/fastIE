@@ -1,6 +1,4 @@
-"""
-这个类还没写好，请勿参考.
-"""
+"""这个类还没写好，请勿参考."""
 
 from dataclasses import dataclass, field
 
@@ -10,24 +8,21 @@ from fastNLP.io import DataBundle
 
 import numpy as np
 
-from .. import DATASET, BaseDataset, BaseDatasetConfig
+from fastie.dataset.BaseDataset import DATASET, BaseDataset, BaseDatasetConfig
 
 
 @dataclass
 class WikiannConfig(BaseDatasetConfig):
     language: str = field(
         default='en',
-        metadata=dict(
-            help=
-            'Select which language subset in wikiann. '
-            'Refer to https://huggingface.co/datasets/wikiann .',
-            existence=True))
+        metadata=dict(help='Select which language subset in wikiann. '
+                      'Refer to https://huggingface.co/datasets/wikiann .',
+                      existence=True))
 
 
 @DATASET.register_module('wikiann')
 class Wikiann(BaseDataset):
-    """
-    Wikiann 为 NER 数据集，由 172 语言的子集组成，标签包括 LOC, ORG, PER。
+    """Wikiann 为 NER 数据集，由 172 语言的子集组成，标签包括 LOC, ORG, PER。
 
     :param language: 选择哪个语言的子集
         参考 https://huggingface.co/datasets/wikiann
@@ -35,7 +30,7 @@ class Wikiann(BaseDataset):
     _config = WikiannConfig()
 
     def __init__(self, language: str = 'en', **kwargs):
-        BaseDataset.__init__(self, **kwargs)
+        super().__init__(**kwargs)
         self.language = language
 
     def run(self):
@@ -73,20 +68,18 @@ class Wikiann(BaseDataset):
                                 continue
                             else:
                                 entity_mentions.append(
-                                    (span,
-                                     idx2tag[current_tag]))
+                                    (span, idx2tag[current_tag]))
                                 span = [i]
                                 current_tag = sample['ner_tags'][i]
                                 continue
                     else:
                         if len(span) > 0:
-                            entity_mentions.append((span, idx2tag[
-                                sample['ner_tags'][span[0]]]))
+                            entity_mentions.append(
+                                (span, idx2tag[sample['ner_tags'][span[0]]]))
                             span = []
                 if len(span) > 0:
                     entity_mentions.append(
-                        (span,
-                         idx2tag[sample['ner_tags'][span[0]]]))
+                        (span, idx2tag[sample['ner_tags'][span[0]]]))
                 instance.add_field('entity_mentions', entity_mentions)
                 datasets[split].append(instance)
 

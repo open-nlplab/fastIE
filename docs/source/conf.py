@@ -204,7 +204,8 @@ man_pages = [(master_doc, 'FastIE', 'FastIE Documentation', [author], 1)]
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'FastIE', 'FastIE Documentation', author, 'FastIE',
-     'A general integration framework for information extraction.', 'Miscellaneous'),
+     'A general integration framework for information extraction.',
+     'Miscellaneous'),
 ]
 
 # Ignore >>> when copying code

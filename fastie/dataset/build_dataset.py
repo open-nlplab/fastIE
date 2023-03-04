@@ -9,11 +9,10 @@ from fastNLP import DataSet, Instance
 from fastNLP.io import DataBundle
 
 
-def build_dataset(
-        dataset: Optional[Union[str, Sequence[str], dict, Sequence[dict],
-        DataSet, DataBundle]],
-        dataset_config: Optional[dict] = None
-) -> DataBundle:
+def build_dataset(dataset: Optional[Union[str, Sequence[str], dict,
+                                          Sequence[dict], DataSet,
+                                          DataBundle]],
+                  dataset_config: Optional[dict] = None) -> DataBundle:
     data_bundle = DataBundle()
     if dataset is None:
         if not get_dataset():
@@ -22,8 +21,8 @@ def build_dataset(
             if dataset_config is None:
                 data_bundle = DATASET.get(get_dataset())().run()
             else:
-                data_bundle = DATASET.get(get_dataset())(
-                    **parse_config(dataset_config)).run()
+                data_bundle = DATASET.get(
+                    get_dataset())(**parse_config(dataset_config)).run()
     else:
         if isinstance(dataset, str) or isinstance(dataset, Sequence) \
                 and isinstance(dataset[0], str):

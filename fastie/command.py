@@ -14,7 +14,7 @@ from fastie.chain import Chain
 
 chain = Chain([])
 
-global_config = dict()
+global_config: dict = dict()
 
 
 @dataclass

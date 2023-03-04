@@ -35,6 +35,5 @@ class BaseController(BaseNode):
                 parameters_or_data = next(parameters_or_data)
             return parameters_or_data
 
-
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
