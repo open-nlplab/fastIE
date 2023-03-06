@@ -1,3 +1,10 @@
+"""
+交互器
+"""
+__all__ = [
+    'InteractorConfig',
+    'Interactor',
+]
 from fastie.controller.BaseController import BaseController, CONTROLLER
 from fastie.controller.inference import Inference
 from fastie.node import BaseNodeConfig
@@ -13,6 +20,9 @@ from fastNLP.io import DataBundle
 
 @dataclass
 class InteractorConfig(BaseNodeConfig):
+    """
+    交互器的配置
+    """
     log: str = field(
         default='',
         metadata={
@@ -26,6 +36,16 @@ class InteractorConfig(BaseNodeConfig):
 
 @CONTROLLER.register_module('interactor')
 class Interactor(BaseController):
+    """
+    交互器
+    用于在命令行模式中进行交互式的预测, 例如:
+
+        .. code-block:: console
+            :linenos:
+            $ fastie-interact --task ner/bert --load_model model.pkl --cuda --log interactive.log
+
+    :param log: 交互日志的保存路径, 如果不设置, 则不会保存日志
+    """
 
     def __init__(self, log: Optional[str] = None):
         super(Interactor, self).__init__()

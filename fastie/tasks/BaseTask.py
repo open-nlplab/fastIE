@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Sequence, Union, Generator, Optional, Any
 
 from fastNLP import Vocabulary, Callback, prepare_dataloader
-from fastNLP.core.callbacks import CheckpointCallback
+from fastNLP.core.callbacks import CheckpointCallback, LoadBestModelCallback
 from fastNLP.io import DataBundle
 
 from fastie.envs import get_flag, logger
@@ -24,7 +24,7 @@ class BaseTaskConfig(BaseNodeConfig, metaclass=abc.ABCMeta):
         default=False,
         metadata=dict(
             help='Whether to use your NVIDIA graphics card to accelerate the '
-            'process.',
+                 'process.',
             existence=True))
     load_model: str = field(
         default='',
@@ -32,8 +32,7 @@ class BaseTaskConfig(BaseNodeConfig, metaclass=abc.ABCMeta):
                       existence=True))
     save_model: str = field(
         default='',
-        metadata=dict(help='The path to save the model in last epoch '
-                      '(Only available for train). ',
+        metadata=dict(help='The path to save the model in last epoch ',
                       existence='train'))
     batch_size: int = field(default=32,
                             metadata=dict(help='Batch size. ', existence=True))
@@ -46,18 +45,30 @@ class BaseTaskConfig(BaseNodeConfig, metaclass=abc.ABCMeta):
                                       existence='train'))
     topk: int = field(default=0,
                       metadata=dict(
-                          help='Save the top-k models according to metric. '
-                          '(Only available for train). ',
+                          help='Save the top-k model according to the monitor each epoch. ',
                           existence='train'))
+    load_best_model: bool = field(default=False,
+                                  metadata=dict(
+                                      help='Load the best model according to the monitor each epoch. ',
+                                      existence=False))
+
     monitor: str = field(default='',
                          metadata=dict(
                              help='The metric name which is used to select '
-                             'the best model when using topk. '
-                             'If this is not set, the first metric is used',
+                                  'the best model when using topk. '
+                                  'If this is not set, the first metric is used',
                              existence='train'))
     fp16: bool = field(default=False,
                        metadata=dict(help='Enable mixed-precision training. ',
                                      existence='train'))
+    evaluate_every: int = field(default=-1,
+                                metadata=dict(
+                                    help='Frequency of evaluation. '
+                                         'If the value is positive, '
+                                         'the evaluation is performed once every n batch. '
+                                         'If the value is negative, '
+                                         'the evaluation is performed once every n epochs ',
+                                    existence='train'))
 
 
 class BaseTask(BaseNode):
@@ -151,8 +162,14 @@ class BaseTask(BaseNode):
     :param batch_size: batch size
     :param epochs: 训练的轮数
     :param topk: 保存 metric 最好的 k 个模型
+    :param load_best_model: 是否在训练结束后自动加载 ``monitor`` 监控的指标最好的模型
     :param monitor: 根据哪个 metric 选择  top-k 的模型
     :param fp16: 是否使用混合精度训练
+    :param evaluate_every: 训练过程中检验的频率,
+    对 ``topk`` 和 ``load_best_model`` 有影响``:
+        * 为 ``0`` 时则训练过程中不进行检验
+        * 如果为正数，则每 ``evaluate_every`` 个 batch 进行一次检验
+        * 如果为负数，则每 ``evaluate_every`` 个 epoch 进行一次检验
     """
     _config = BaseTaskConfig()
 
@@ -164,8 +181,10 @@ class BaseTask(BaseNode):
                  shuffle: bool = True,
                  epochs: int = 20,
                  topk: int = 0,
+                 load_best_model: bool = False,
                  monitor: str = '',
                  fp16: bool = False,
+                 evaluate_every: int = -1,
                  **kwargs):
         BaseNode.__init__(self, **kwargs)
         self.cuda = cuda
@@ -173,9 +192,11 @@ class BaseTask(BaseNode):
         self.save_model = save_model
         self.epochs = epochs
         self.topk = topk
+        self.load_best_model = load_best_model
         self.monitor = monitor
         self.fp16 = fp16
         self.batch_size = batch_size
+        self.evaluate_every = evaluate_every
         self.shuffle = shuffle
 
         object.__setattr__(self, 'run', self._run_generator())
@@ -216,7 +237,7 @@ class BaseTask(BaseNode):
 
     @abc.abstractmethod
     def on_dataset_preprocess(self, data_bundle: DataBundle,
-                              tag_vocab: Vocabulary,
+                              tag_vocab: Optional[Vocabulary],
                               state_dict: Optional[dict]) -> DataBundle:
         """数据预处理，包括数据索引化和标签索引化。必须重写.
 
@@ -230,7 +251,9 @@ class BaseTask(BaseNode):
                                   'method must be implemented. ')
 
     @abc.abstractmethod
-    def on_setup_model(self, data_bundle: DataBundle, tag_vocab: Vocabulary,
+    def on_setup_model(self,
+                       data_bundle: DataBundle,
+                       tag_vocab: Optional[Vocabulary],
                        state_dict: Optional[dict]):
         """模型构建，包括模型的初始化和加载。必须重写.
 
@@ -244,8 +267,11 @@ class BaseTask(BaseNode):
         raise NotImplementedError('Model setup method must be implemented. ')
 
     @abc.abstractmethod
-    def on_setup_optimizers(self, model, data_bundle: DataBundle,
-                            tag_vocab: Vocabulary, state_dict: Optional[dict]):
+    def on_setup_optimizers(self,
+                            model,
+                            data_bundle: DataBundle,
+                            tag_vocab: Optional[Vocabulary],
+                            state_dict: Optional[dict]):
         """优化器构建，包括优化器的初始化和加载。必须重写.
 
         :param model: 初始化和加载后的模型
@@ -257,8 +283,11 @@ class BaseTask(BaseNode):
         raise NotImplementedError(
             'Optimizer setup method must be implemented. ')
 
-    def on_setup_dataloader(self, model, data_bundle: DataBundle,
-                            tag_vocab: Vocabulary, state_dict: Optional[dict]):
+    def on_setup_dataloader(self,
+                            model,
+                            data_bundle: DataBundle,
+                            tag_vocab: Optional[Vocabulary],
+                            state_dict: Optional[dict]):
         """数据加载器构建，包括数据加载器的初始化和加载。不需要重写.
 
         :param model: 初始化和加载后的模型
@@ -275,18 +304,25 @@ class BaseTask(BaseNode):
                     data_bundle.datasets['train'],
                     batch_size=self.batch_size,
                     shuffle=self.shuffle), \
-                    prepare_dataloader(data_bundle.datasets['dev'])
+                    prepare_dataloader(data_bundle.datasets['dev'],
+                                          batch_size=self.batch_size,
+                                          shuffle=self.shuffle)
             else:
                 return prepare_dataloader(data_bundle.datasets['train'],
                                           batch_size=self.batch_size,
                                           shuffle=self.shuffle)
         elif get_flag() == 'eval':
-            return prepare_dataloader(data_bundle.datasets['dev'])
+            return prepare_dataloader(data_bundle.datasets['test'],
+                                      batch_size=self.batch_size,
+                                      shuffle=self.shuffle)
         elif get_flag() == 'infer' or get_flag() == 'interact':
-            return prepare_dataloader(data_bundle.datasets['infer'])
+            return prepare_dataloader(data_bundle.datasets['infer'],
+                                      batch_size=self.batch_size,
+                                      shuffle=self.shuffle)
+
     def on_setup_callbacks(self, model,
                            data_bundle: DataBundle,
-                           tag_vocab: Vocabulary,
+                           tag_vocab: Optional[Vocabulary],
                            state_dict: Optional[dict]) \
             -> Union[Callback, Sequence[Callback]]:
         """FastNLP 回调参数构建，包括回调对象的初始化和加载。默认为空。
@@ -300,7 +336,7 @@ class BaseTask(BaseNode):
         return []
 
     def on_setup_metrics(self, model, data_bundle: DataBundle,
-                         tag_vocab: Vocabulary,
+                         tag_vocab: Optional[Vocabulary],
                          state_dict: Optional[dict]) -> dict:
         """FastNLP 评价指标构建，包括评价指标对象的初始化和加载。默认为空。
 
@@ -322,7 +358,7 @@ class BaseTask(BaseNode):
         return {}
 
     def on_setup_extra_fastnlp_parameters(self, model, data_bundle: DataBundle,
-                                          tag_vocab: Vocabulary,
+                                          tag_vocab: Optional[Vocabulary],
                                           state_dict: Optional[dict]) -> dict:
         """其他 FastNLP 的可用参数.
 
@@ -335,14 +371,12 @@ class BaseTask(BaseNode):
         return {}
 
     def on_get_state_dict(self, model, data_bundle: DataBundle,
-                          tag_vocab: Vocabulary,
-                          loaded_state_dict: Optional[dict]) -> dict:
+                          tag_vocab: Optional[Vocabulary]) -> dict:
         """获取 ``state_dict`` 用来保存，和其他方法参数中的 ``state_dict`` 一致。
 
         :param model: 初始化和加载后的模型
         :param data_bundle: 预处理后的数据集
         :param tag_vocab: 标签词典
-        :param loaded_state_dict: 上次加载模型得到的 ``state_dict``，可能为 ``None``
         :return: 最新的 ``state_dict``
         """
         state_dict = {'model': model.state_dict()}
@@ -353,7 +387,7 @@ class BaseTask(BaseNode):
     def _run_generator(self):
 
         def run(data_bundle: DataBundle):
-
+            self.refresh_cache()
             def run_warp(data_bundle: DataBundle):
                 parameters_or_data: dict = {}
 
@@ -432,11 +466,11 @@ class BaseTask(BaseNode):
                         if hasattr(parameters_or_data['model'],
                                    'evaluate_step'):
                             parameters_or_data['evaluate_dataloaders'] = \
-                                {f'eval{i}': dataloaders[i]
-                                 for i in range(1, len(dataloaders[1:]))}
+                                {f'eval-{i}': dataloaders[i]
+                                 for i in range(1, len(dataloaders[1:]) + 1)}
                     else:
                         parameters_or_data['evaluate_dataloaders'] = \
-                            {f'eval{i + 1}': dataloaders[i]
+                            {f'eval-{i + 1}': dataloaders[i]
                              for i in range(len(dataloaders))}
                 else:
                     if get_flag() == 'train':
@@ -489,17 +523,18 @@ class BaseTask(BaseNode):
                 if self.save_model != '':
 
                     def fastie_save_step():
-                        if self._on_setup_model_cache is not None:
-                            self._on_get_state_dict_cache \
-                                = self.on_get_state_dict(
-                                model=self._on_setup_model_cache,
-                                data_bundle=self._on_dataset_preprocess_cache,
-                                tag_vocab=
-                                self._on_generate_and_check_tag_vocab_cache,
-                                loaded_state_dict=
-                                self._on_get_state_dict_cache)
-                            Hub.save(self.save_model,
-                                     self._on_get_state_dict_cache)
+                        self._on_get_state_dict_cache \
+                            = self.on_get_state_dict(
+                            model=self._on_setup_model_cache,
+                            data_bundle=self._on_dataset_preprocess_cache,
+                            tag_vocab=
+                            self._on_generate_and_check_tag_vocab_cache)
+                        Hub.save(self.save_model,
+                                 self._on_get_state_dict_cache)
+                        if self.load_best_model \
+                                and isinstance(self._on_setup_metrics_cache, dict) \
+                                and len(self._on_setup_metrics_cache) > 0:
+                            self._on_setup_model_cache = None
 
                     setattr(self._on_setup_model_cache, 'fastie_save_step',
                             fastie_save_step)
@@ -517,24 +552,56 @@ class BaseTask(BaseNode):
                         and len(self._on_setup_metrics_cache) > 0:
 
                     def model_save_fn(folder):
-                        self._on_get_state_dict_cache \
-                            = self.on_get_state_dict(
-                            model=self._on_setup_model_cache,
-                            data_bundle=self._on_dataset_preprocess_cache,
-                            tag_vocab=
-                            self._on_generate_and_check_tag_vocab_cache,
-                            loaded_state_dict=
-                            self._on_get_state_dict_cache)
-                        Hub.save(self.save_model,
-                                 self._on_get_state_dict_cache)
-
-                    callback = CheckpointCallback(
-                        folder=os.getcwd(),
+                        Hub.save(os.path.join(folder, "model.bin"),
+                                 self.on_get_state_dict(
+                                     model=self._on_setup_model_cache,
+                                     data_bundle=
+                                     self._on_dataset_preprocess_cache,
+                                     tag_vocab=
+                                     self._on_generate_and_check_tag_vocab_cache
+                                 ))
+                    callback_parameters = dict(
+                        folder=os.path.join(os.getcwd(),
+                                            'fastie_topk_model'),
                         topk=self.topk if self.topk != 0 else -self.topk,
                         larger_better=(self.topk > 0),
                         model_save_fn=model_save_fn,
                         monitor=self.monitor if self.monitor != '' else list(
-                            self._on_setup_metrics_cache.keys())[0])
+                            self._on_setup_metrics_cache.keys())[0]
+                    )
+                    callback = CheckpointCallback(**callback_parameters)
+                    if self._on_setup_callbacks_cache is not None:
+                        self._on_setup_callbacks_cache.append(callback)
+                        parameters_or_data['callbacks'] = \
+                            self._on_setup_callbacks_cache
+                    else:
+                        parameters_or_data['callbacks'] = [callback]
+                # load_best_model 相关
+                if self.load_best_model \
+                        and isinstance(self._on_setup_metrics_cache, dict) \
+                        and len(self._on_setup_metrics_cache) > 0:
+                    def model_save_fn(folder):
+                        Hub.save(os.path.join(folder, "model.bin"),
+                                 self.on_get_state_dict(
+                                     model=self._on_setup_model_cache,
+                                     data_bundle=
+                                     self._on_dataset_preprocess_cache,
+                                     tag_vocab=
+                                     self._on_generate_and_check_tag_vocab_cache
+                                 ))
+                    def model_load_fn(folder):
+                        self._on_get_state_dict_cache = Hub.load(
+                            os.path.join(folder, "model.bin"))
+
+                    callback = LoadBestModelCallback(
+                        monitor=self.monitor if self.monitor != '' else list(
+                            self._on_setup_metrics_cache.keys())[0],
+                        model_save_fn=model_save_fn,
+                        model_load_fn=model_load_fn,
+                        save_folder=os.path.join(os.getcwd(),
+                                                 'fastie_best_model_cache'),
+                        delete_after_train=False
+                    )
                     if self._on_setup_callbacks_cache is not None:
                         self._on_setup_callbacks_cache.append(callback)
                         parameters_or_data['callbacks'] = \
@@ -545,6 +612,8 @@ class BaseTask(BaseNode):
                 parameters_or_data['n_epochs'] = self.epochs
                 # 混合精度
                 parameters_or_data['fp16'] = self.fp16
+                # 验证频率
+                parameters_or_data['evaluate_every'] = self.evaluate_every
                 # 为 infer 的情景修改执行函数
                 if get_flag() == 'infer' or get_flag() == 'interact':
                     parameters_or_data['evaluate_fn'] = 'inference_step'
@@ -557,6 +626,15 @@ class BaseTask(BaseNode):
                     yield run_warp(data_bundle)
 
         return run
+
+    def refresh_cache(self):
+        self._on_generate_and_check_tag_vocab_cache = None
+        self._on_dataset_preprocess_cache = None
+        self._on_setup_model_cache = None
+        self._on_setup_callbacks_cache = None
+        self._on_setup_metrics_cache = None
+        self._on_setup_extra_fastnlp_parameters_cache = None
+        self._on_get_state_dict_cache = None
 
     def run(self, data_bundle: DataBundle):
         raise NotImplementedError
