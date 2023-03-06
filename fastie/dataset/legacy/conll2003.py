@@ -139,12 +139,13 @@ class Conll2003(BaseDataset):
                             span.append(i)
                             continue
                         else:
-                            if current_tag == sample['ner_tags'][i]:
+                            if current_tag == sample['ner_tags'][i] \
+                                    or current_tag + 1 == sample['ner_tags'][i]:
                                 span.append(i)
                                 continue
                             else:
                                 entity_mentions.append(
-                                    (span, idx2tag['ner'][current_tag]))
+                                    (span, idx2tag['ner'][current_tag][2:]))
                                 span = [i]
                                 current_tag = sample['ner_tags'][i]
                                 continue
@@ -152,14 +153,15 @@ class Conll2003(BaseDataset):
                         if len(span) > 0:
                             entity_mentions.append(
                                 (span,
-                                 idx2tag['ner'][sample['ner_tags'][span[0]]]))
+                                 idx2tag['ner'][sample['ner_tags'][span[0]]][2:]))
                             span = []
                 if len(span) > 0:
                     entity_mentions.append(
                         (span, idx2tag['ner'][sample['ner_tags'][span[0]]]))
                 instance.add_field('entity_mentions', entity_mentions)
-                instance.add_field('pos', sample['pos_tags'])
-                instance.add_field('chunk', sample['chunk_tags'])
+                instance.add_field('pos_tags', sample['pos_tags'])
+                instance.add_field('chunk_tags', sample['chunk_tags'])
+                instance.add_field('ner_tags', sample['ner_tags'])
                 datasets[split].append(instance)
         data_bundle = DataBundle(datasets=datasets)
         return data_bundle
