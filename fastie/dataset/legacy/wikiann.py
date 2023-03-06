@@ -80,7 +80,7 @@ class Wikiann(BaseDataset):
                             span = []
                 if len(span) > 0:
                     entity_mentions.append(
-                        (span, idx2tag[sample['ner_tags'][span[0]]]))
+                        (span, idx2tag[sample['ner_tags'][span[0]]][2:]))
                 instance.add_field('entity_mentions', entity_mentions)
                 datasets[split].append(instance)
 

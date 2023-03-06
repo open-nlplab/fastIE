@@ -157,7 +157,7 @@ class Conll2003(BaseDataset):
                             span = []
                 if len(span) > 0:
                     entity_mentions.append(
-                        (span, idx2tag['ner'][sample['ner_tags'][span[0]]]))
+                        (span, idx2tag['ner'][sample['ner_tags'][span[0]]][2:]))
                 instance.add_field('entity_mentions', entity_mentions)
                 instance.add_field('pos_tags', sample['pos_tags'])
                 instance.add_field('chunk_tags', sample['chunk_tags'])
