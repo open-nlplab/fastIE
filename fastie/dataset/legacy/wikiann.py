@@ -63,19 +63,20 @@ class Wikiann(BaseDataset):
                             span.append(i)
                             continue
                         else:
-                            if current_tag == sample['ner_tags'][i]:
+                            if current_tag == sample['ner_tags'][i] or \
+                                    current_tag + 1 == sample['ner_tags'][i]:
                                 span.append(i)
                                 continue
                             else:
                                 entity_mentions.append(
-                                    (span, idx2tag[current_tag]))
+                                    (span, idx2tag[current_tag][2:]))
                                 span = [i]
                                 current_tag = sample['ner_tags'][i]
                                 continue
                     else:
                         if len(span) > 0:
                             entity_mentions.append(
-                                (span, idx2tag[sample['ner_tags'][span[0]]]))
+                                (span, idx2tag[sample['ner_tags'][span[0]]][2:]))
                             span = []
                 if len(span) > 0:
                     entity_mentions.append(
