@@ -152,8 +152,10 @@ class BertNER(BaseTask):
             shuffle: bool = True,
             epochs: int = 20,
             topk: int = 0,
+            load_best_model: bool = False,
             monitor: str = '',
             fp16: bool = False,
+            evaluate_every: int = -1,
             **kwargs):
         # 必须要把父类 （BaseTask）的参数也复制过来，否则用户没有父类的代码提示；
         # 在这里进行父类的初始化；
@@ -167,6 +169,8 @@ class BertNER(BaseTask):
                                       topk=topk,
                                       monitor=monitor,
                                       fp16=fp16,
+                                      load_best_model=load_best_model,
+                                      evaluate_every=evaluate_every,
                                       **kwargs)
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.lr = lr
