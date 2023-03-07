@@ -9,31 +9,17 @@ FastIE 具有如下的特性：
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: 快速上手
 
    tutorials/basic/index
-   tutorials/torch/index
-   tutorials/paddle/index
 
 
 .. toctree::
    :maxdepth: 2
    :caption: API 文档
 
-   fastNLP.core <api/core>
-   fastNLP.io <api/io>
-   fastNLP.embeddings <api/embeddings>
-   fastNLP.models <api/models>
-   fastNLP.modules <api/modules>
-   fastNLP.envs <api/envs>
-   fastNLP.transformers <api/transformers>
-
-.. toctree::
-   :maxdepth: 1
-   :caption: 说明
-
-   instructions/contribution
+   fastie.tasks <api/tasks>
 
 
 索引与搜索

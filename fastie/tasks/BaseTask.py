@@ -72,89 +72,7 @@ class BaseTaskConfig(BaseNodeConfig, metaclass=abc.ABCMeta):
 
 
 class BaseTask(BaseNode):
-    """FastIE 所有任务需要继承基类并重写生命周期方法。Task 的生命周期如下所示.
-
-    （带星号号的为必须重写的方法,且标星号以及更上层的时间节点不会重复运行）：
-
-        +-------+ state_dict/None           data_bundle
-        |                +                       +
-        |                |                       |
-        |                |                       |
-        |                v                       v
-        |         +------+-----------------------+-------+
-        |         |                                      |       tag_vocab
-        |         |    on_generate_and_check_tag_vocab   +------+--------+
-        |         |                                      |      |        |
-        |         +------------------+-------------------+      |        |
-        |                            |                          |        |
-        |                            |  tag_vocab               |        |
-        |                            v                          |        |
-        |         +------------------+-------------------+      |        |
-        |         |                                      |      |        |
-        +-------> |         *on_dataset_preprocess       |      |        |
-        |         |                                      |      |        |
-        |         +------------------+-------------------+      |        |
-        |                            |                          |        |
-        |                            |  data_bundle             |        |
-        |                            v                          |        |
-        |         +------------------+-------------------+      |        |
-        |         |                                      |  <---+        |
-        +-------> |           *on_setup_model            |               |
-        |         |                                      |  +---+        |
-        |         +------------------+-------------------+      |        |
-        |                            |                          |        |
-        |                            |  model                   |        |
-        |                            v                          |        |
-        |         +------------------+-------------------+      |        |
-        |         |                                      |      |        |
-        +------>  |          *on_setup_optimizers        |      |        |
-        |         |                                      |      |        |
-        |         +--------------------------------------+      | model  |
-        |                                                       |        |
-        |                                                       |        |
-        |                                                       |        |
-        |         +--------------------------------------+      |        |
-        |         |                                      |      |        |
-        +-------> |           on_setup_dataloader        |      |        |
-        |         |                                      |      |        |
-        |         +--------------------------------------+      |        |
-        |                                                       |        |
-        |                                                       |        |
-        |                                                       |        |
-        |         +--------------------------------------+      |        |
-        |         |                                      |      |        |
-        +-------> |           on_setup_callbacks         |      |        |
-        |         |                                      |      |        |
-        |         +--------------------------------------+      |        |
-        |                                                       |        |
-        |                                                       |        |
-        |                                                       |        |
-        |         +--------------------------------------+      |        |
-        |         |                                      |      |        |
-        +-------> |            on_setup_metrics          |      |        |
-        |         |                                      |      |        |
-        |         +--------------------------------------+      |        |
-        |                                                       |        |
-        |                                                       |        |
-        |                                                       |        |
-        |         +--------------------------------------+      |        |
-        |         |                                      |      |        |
-        +-------> |   on_setup_extra_fastnlp_parameters  |      |        |
-        |         |                                      |      |        |
-        |         +--------------------------------------+      |        |
-        |                                                       |        |
-        |                                                       |        |
-        |                                                       |        |
-        |         +--------------------------------------+      |        |
-        |         |                                      |  <---+        |
-        +-------> |            on_get_state_dict         |               |
-                  |                                      |  <------------+
-                  +------------------+-------------------+
-                                     |
-                                     |
-                                     |
-                                     v
-                                 state_dict
+    """FastIE 所有任务需要继承基类并重写生命周期方法.
 
     :param cuda: 是否使用 GPU 加速训练
     :param load_model: 加载模型的路径或者模型名
@@ -217,7 +135,8 @@ class BaseTask(BaseNode):
                                         state_dict: Optional[dict]) \
             -> Optional[Vocabulary]:
         """根据数据集中的已标注数据的标签词频生成标签词典。 如果加载模型得到的 ``state_dict`` 中存在
-        ``tag_vocab``，则检查是否与 根据 ``data_bundle`` 生成的 tag_vocab 一致。
+        ``tag_vocab``，则检查是否与根据 ``data_bundle`` 生成的 tag_vocab 一致
+        (优先使用加载得到的 tag_vocab)。
 
         :param data_bundle: 原始数据集，
             可能包含 ``train``、``dev``、``test``、``infer`` 四种，需要分类处理。
@@ -443,15 +362,16 @@ class BaseTask(BaseNode):
                             'The model you are using does not '
                             'have a `inference_step` method, which '
                             'is required for inferring.')
-                if not self._on_setup_optimizers_cache:
-                    self._on_setup_optimizers_cache = \
-                        self.on_setup_optimizers(
-                            model=self._on_setup_model_cache,
-                            data_bundle=self._on_dataset_preprocess_cache,
-                            tag_vocab=self._on_generate_and_check_tag_vocab_cache,
-                            state_dict=self._on_get_state_dict_cache)
-                parameters_or_data[
-                    'optimizers'] = self._on_setup_optimizers_cache
+                if get_flag() == "train":
+                    if not self._on_setup_optimizers_cache:
+                        self._on_setup_optimizers_cache = \
+                            self.on_setup_optimizers(
+                                model=self._on_setup_model_cache,
+                                data_bundle=self._on_dataset_preprocess_cache,
+                                tag_vocab=self._on_generate_and_check_tag_vocab_cache,
+                                state_dict=self._on_get_state_dict_cache)
+                    parameters_or_data[
+                        'optimizers'] = self._on_setup_optimizers_cache
                 # 易变的部分
                 self._on_setup_dataloader_cache = \
                     self.on_setup_dataloader(
