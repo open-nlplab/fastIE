@@ -1,3 +1,7 @@
+"""
+This module is used to build the task from config.
+"""
+__all__ = ['build_task']
 from fastie.tasks import NER, RE, EE
 from fastie.envs import get_task
 from fastie.utils.utils import parse_config
@@ -8,11 +12,10 @@ from copy import deepcopy
 
 
 def build_task(_config: Optional[Union[dict, str]] = None):
-    """Build the task you want to use from the config you give or the global
-    config.
+    """Build the task you want to use from the config you give.
 
-    :param _config:
-    :return:
+    :param _config: The config you want to use. It can be a dict or a path to a `*.py` config file.
+    :return: The task in config.
     """
     task, solution = '', ''
     if _config is not None:

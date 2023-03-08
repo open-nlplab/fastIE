@@ -1,3 +1,11 @@
+"""
+The shared dataset of CoNLL-2003 concerns language-independent named entity
+recognition.
+"""
+__all__ = [
+    'Conll2003', 'Conll2003Config'
+]
+
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -10,13 +18,19 @@ from fastie.dataset.BaseDataset import BaseDataset, DATASET, BaseDatasetConfig
 
 @dataclass
 class Conll2003Config(BaseDatasetConfig):
+    """
+    Conll2003 数据集的配置类
+    """
     pass
 
 
 @DATASET.register_module('conll2003')
 class Conll2003(BaseDataset):
-    """The shared task of CoNLL-2003 concerns language-independent named entity
-    recognition."""
+    """
+    The shared task of CoNLL-2003 concerns language-independent named entity
+    recognition.
+
+    """
     _config = Conll2003Config()
     _help = 'Conll2003 for NER task. Refer to ' \
             'https://huggingface.co/datasets/conll2003 for more information.'

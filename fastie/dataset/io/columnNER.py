@@ -1,4 +1,6 @@
-"""这个类还没写好，请勿参考."""
+"""Conll2003 like dataset for FastIE."""
+
+__all__ = ['ColumnNER', 'ColumnNERConfig']
 
 import os
 from dataclasses import dataclass, field
@@ -15,6 +17,9 @@ from fastie.envs import logger
 
 @dataclass
 class ColumnNERConfig(BaseDatasetConfig):
+    """
+    ColumnNER 数据集配置类
+    """
     folder: str = field(
         default='',
         metadata=dict(help='The folder where the data set resides. \n'
@@ -26,7 +31,7 @@ class ColumnNERConfig(BaseDatasetConfig):
                                            existence=True))
     tag_index: int = field(default=-1,
                            metadata=dict(help='The index of tags to predict.',
-                                         existence=['train', 'evaluate']))
+                                         existence=['train', 'eval']))
     split_char: str = field(
         default=' ',
         metadata=dict(
@@ -45,16 +50,23 @@ class ColumnNERConfig(BaseDatasetConfig):
 
 @DATASET.register_module('column-ner')
 class ColumnNER(BaseDataset):
-    """ 类似 conll2003 这种的数据集，每一行是一个 token 和对应的 tag
-    Args:
-        :folder (str)[train,evaluation,inference]=None: 数据集所在的文件夹.
-        :token_index (int)[train,evaluation,inference]=0: token 所在的列.
-        :tag_index (int)[train,evaluation,inference]=0: tag 所在的列.
-        :split_char (str)[train,evaluation,inference]=" ": 分隔符.
-        :skip_content (str)[train,evaluation,inference]=None: 跳过的行的内容.
+    """
+    Conll2003 like dataset for FastIE.
+    Each row has a token and its corresponding NER tag.
+
+    :param folder: The folder where the data set resides. ``train.txt``,
+        ``dev.txt``, ``test.txt`` and ``infer.txt`` in the folder will be loaded.
+    :param token_index: The index of tokens in a row.
+    :param tag_index: The index of tags to predict in a row.
+    :param split_char: The split character. If this parameter is not set, it is
+        separated by space.
+    :param skip_content: The content to skip. If this item is not set, it is
+        divided by newline character.
+    :param cache: Whether to cache the dataset.
+    :param refresh_cache: Whether to refresh the cache.
     """
     _config = ColumnNERConfig()
-
+    _help = 'Conll2003 like dataset for FastIE. Each row has a token and its corresponding NER tag.'
     def __init__(self,
                  folder: str = './',
                  token_index: int = 0,
@@ -63,11 +75,9 @@ class ColumnNER(BaseDataset):
                  skip_content: Union[str, Sequence[str]] = '\n',
                  cache: bool = False,
                  refresh_cache: bool = False,
-                 tag_vocab: Optional[Union[Vocabulary, dict]] = None,
                  **kwargs):
         super(ColumnNER, self).__init__(cache=cache,
                                         refresh_cache=refresh_cache,
-                                        tag_vocab=tag_vocab,
                                         **kwargs)
         self.folder = folder
         self.token_index = token_index
@@ -89,15 +99,21 @@ class ColumnNER(BaseDataset):
                         if reduce(lambda x, y: x or y, [
                                 line.startswith(content)
                                 for content in node.skip_content
-                        ]):
+                        ]) or line.strip() == '':
                             if len(data) != 0:
-                                ds.append(
-                                    Instance(tokens=[d['token'] for d in data],
-                                             tags=[d['tag'] for d in data]))
-                                data = []
+                                if 'infer' in path:
+                                    ds.append(
+                                        Instance(tokens=[d['token']
+                                                         for d in data]))
+                                else:
+                                    ...
+                                # ds.append(
+                                #     Instance(tokens=[d['token'] for d in data],
+                                #              tags=[d['tag'] for d in data]))
+                                # data = []
                             continue
                         lines = line.strip().split(node.split_char)
-                        if 'generate' in path:
+                        if 'infer' in path:
                             data.append({'token': lines[node.token_index]})
                         else:
                             data.append({
@@ -105,14 +121,17 @@ class ColumnNER(BaseDataset):
                                 'tag': lines[node.tag_index]
                             })
                 if len(data) != 0:
-                    ds.append(
-                        Instance(tokens=[d['token'] for d in data],
-                                 tags=[d['tag'] for d in data]))
+                    if 'infer' in path:
+                        ds.append(
+                            Instance(tokens=[d['token']
+                                             for d in data]))
+                    else:
+                        ...
                 return ds
 
         data_bundle = ColumnNERLoader().load({
             file: os.path.exists(os.path.join(self.folder, f'{file}.txt'))
-            for file in ('train', 'dev', 'test', 'generate')
+            for file in ('train', 'dev', 'test', 'infer')
             if os.path.exists(os.path.join(self.folder, f'{file}.txt'))
         })
         return data_bundle

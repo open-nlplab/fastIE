@@ -1,3 +1,7 @@
+"""
+JsonLinesNER dataset for FastIE.
+"""
+__all__ = ['JsonLinesNER', 'JsonLinesNERConfig']
 import json
 import os
 
@@ -12,6 +16,9 @@ from typing import Union, Dict
 
 @dataclass
 class JsonLinesNERConfig(BaseDatasetConfig):
+    """
+    JsonLinesNER 数据集配置类
+    """
     folder: str = field(
         default='',
         metadata=dict(help='The folder where the data set resides. '
@@ -28,19 +35,51 @@ class JsonLinesNERConfig(BaseDatasetConfig):
 
 @DATASET.register_module('jsonlines-ner')
 class JsonLinesNER(BaseDataset):
-    _config = JsonLinesNERConfig()
+    """
+    JsonLinesNER dataset for FastIE.
+    Each row has a NER sample in json format:
 
+    .. code-block:: json
+    {
+        "tokens": ["I", "love", "FastIE", "."],
+        "entity_mentions": [
+            {
+                "entity_index": [2],
+                "entity_type": "MISC"
+            },
+    }
+
+    or:
+
+    .. code-block:: json
+    {
+        "tokens": ["I", "love", "FastIE", "."],
+        "entity_mentions": [
+            {
+                "start": 2,
+                "end": 3,
+                "entity_type": "MISC"
+            },
+    }
+
+    :param folder: The folder where the data set resides.
+    :param right_inclusive: When data is in the format of start and end,
+        whether each span contains the token corresponding to end.
+    :param cache: Whether to cache the dataset.
+    :param refresh_cache: Whether to refresh the cache.
+
+    """
+    _config = JsonLinesNERConfig()
+    _help = 'JsonLinesNER dataset for FastIE. Each row has a NER sample in json format. '
     def __init__(self,
                  folder: str = '',
                  right_inclusive: bool = False,
                  cache: bool = False,
                  refresh_cache: bool = False,
-                 tag_vocab: Union[Vocabulary, dict] = None,
                  **kwargs):
         BaseDataset.__init__(self,
                              cache=cache,
                              refresh_cache=refresh_cache,
-                             tag_vocab=tag_vocab,
                              **kwargs)
         self.folder = folder
         self.right_inclusive = right_inclusive

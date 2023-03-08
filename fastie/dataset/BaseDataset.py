@@ -1,7 +1,13 @@
+"""
+Base class for all FastIE datasets.
+"""
+__all__ = [
+    'BaseDataset', 'BaseDatasetConfig', 'load_dataset', 'DATASET']
 import os
+import abc
 from dataclasses import dataclass, field
 
-from fastNLP import Vocabulary, cache_results
+from fastNLP import cache_results
 
 from fastie.envs import FASTIE_HOME
 from fastie.node import BaseNode, BaseNodeConfig
@@ -11,6 +17,13 @@ DATASET = Registry('DATASET')
 
 
 def load_dataset(name, *args, **kwargs):
+    """
+    根据 dataset 的注册名字加载 dataset 对象.
+    :param name:
+    :param args:
+    :param kwargs:
+    :return:
+    """
     return DATASET.get(name)(*args, **kwargs)
 
 
@@ -28,12 +41,12 @@ class BaseDatasetConfig(BaseNodeConfig):
                       existence=True))
 
 
-class BaseDataset(BaseNode):
-    """数据集基类.
+class BaseDataset(BaseNode, metaclass=abc.ABCMeta):
+    """
+    FastIE 数据集基类.
 
-    Args:
-        :use_cache (bool)[train,evaluation,inference]=False: 是否使用 cache.
-        :refresh_cache (bool)[train,evaluation,inference]=False: 是否刷新 cache.
+    :param cache: 是否缓存数据集.
+    :param refresh_cache: 是否刷新缓存.
     """
 
     _config = BaseDatasetConfig()
@@ -63,8 +76,13 @@ class BaseDataset(BaseNode):
                               _refresh=self.refresh_cache)(self.run))
         self._cache = value
 
+    @abc.abstractmethod
     def run(self):
-        raise NotImplementedError
+        """
+        加载数据集, 返回一个 DataBundle 对象.
+        :return:
+        """
+        raise NotImplementedError("The `run` method must be implemented. ")
 
     def __call__(self, *args, **kwargs):
         return self.run()

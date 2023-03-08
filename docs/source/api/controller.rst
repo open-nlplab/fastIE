@@ -1,17 +1,17 @@
 .. role:: hidden
     :class: hidden-section
 
-fastie.tasks
+fastie.controller
 ===================================
 
-.. contents:: fastie.tasks
+.. contents:: fastie.controller
     :local:
     :depth: 2
     :backlinks: top
 
-.. currentmodule:: fastie.tasks
+.. currentmodule:: fastie.controller
 
-Tasks
+Controller
 ----------------
 
 .. autosummary::
@@ -19,7 +19,7 @@ Tasks
     :nosignatures:
     :template: classtemplate.rst
 
-    BaseTask
-    BaseTaskConfig
-    BertNER
-    BertNERConfig
+    Trainer
+    Evaluator
+    Inference
+    Interactor

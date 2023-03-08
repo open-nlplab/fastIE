@@ -1,3 +1,10 @@
+"""
+BertNER
+"""
+__all__ = [
+    "BertNER",
+    "BertNERConfig"
+]
 from dataclasses import dataclass, field
 from functools import reduce
 from typing import Union, Sequence, Optional
@@ -14,6 +21,7 @@ from torch import nn
 
 from fastie.envs import logger
 from fastie.tasks.BaseTask import BaseTask, BaseTaskConfig, NER
+from fastie.tasks.ner.BaseNERTask import BaseNERTask, BaseNERTaskConfig
 from fastie.utils.utils import generate_tag_vocab, check_loaded_tag_vocab
 
 
@@ -119,7 +127,10 @@ class Model(nn.Module):
 
 
 @dataclass
-class BertNERConfig(BaseTaskConfig):
+class BertNERConfig(BaseNERTaskConfig):
+    """
+    BertNER 所需参数
+    """
     pretrained_model_name_or_path: str = field(
         default='bert-base-uncased',
         metadata=dict(
@@ -132,8 +143,15 @@ class BertNERConfig(BaseTaskConfig):
 
 
 @NER.register_module('bert')
-class BertNER(BaseTask):
-    """用预训练模型 Bert 对 token 进行向量表征，然后通过 classification head 对每个 token 进行分类。"""
+class BertNER(BaseNERTask):
+    """
+    BertNER
+        使用预训练的 BERT 模型和分类头来做 NER 任务
+
+    :param pretrained_model_name_or_path: transformers 预训练 BERT 模型名字或路径.
+        (see https://huggingface.co/models for options).
+    :param lr: 学习率
+    """
     # 必须在这里定义自己 config
     _config = BertNERConfig()
     # 帮助信息，会显示在命令行分组的帮助信息中
@@ -175,26 +193,17 @@ class BertNER(BaseTask):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.lr = lr
 
-    def on_generate_and_check_tag_vocab(
-            self, data_bundle: DataBundle,
-            state_dict: Optional[dict]) -> Optional[Vocabulary]:
-        tag_vocab = None
-        if state_dict is not None and 'tag_vocab' in state_dict:
-            tag_vocab = state_dict['tag_vocab']
-        signal, tag_vocab = check_loaded_tag_vocab(
-            tag_vocab,
-            generate_tag_vocab(data_bundle,
-                               unknown=None,
-                               base_mapping={0: 'O'}))
-        if signal == -1:
-            logger.warning(f'It is detected that the model label vocabulary '
-                           f'conflicts with the dataset label vocabulary, '
-                           f'so the model loading may fail. ')
-        return tag_vocab
-
     def on_dataset_preprocess(self, data_bundle: DataBundle,
                               tag_vocab: Vocabulary,
                               state_dict: Optional[dict]) -> DataBundle:
+        """
+        数据预处理, 包括将 `label` 通过生成或加载的 `tag_vocab` 转化为 id,
+            并将 `tokens` 通过 `BertTokenizer` 转化为 id
+        :param data_bundle: 原始数据
+        :param tag_vocab: 生成或加载的 `tag_vocab`
+        :param state_dict: 加载的 `checkpoint`
+        :return: 处理后的数据集
+        """
         # 数据预处理
         tokenizer = BertTokenizer.from_pretrained(
             self.pretrained_model_name_or_path)
@@ -239,6 +248,14 @@ class BertNER(BaseTask):
 
     def on_setup_model(self, data_bundle: DataBundle, tag_vocab: Vocabulary,
                        state_dict: Optional[dict]):
+        """
+        加载 BERT 模型和分类头
+        :param data_bundle: 预处理后的数据集
+        :param tag_vocab: 生成或加载的 `tag_vocab`
+        :param state_dict: 加载的 `checkpoint`
+        :return: 拥有 ``train_step``、``evaluate_step``、 ``inference_step``
+            方法的对象
+        """
         # 模型加载阶段
         model = Model(self.pretrained_model_name_or_path,
                       num_labels=len(list(tag_vocab.word2idx.keys())),
@@ -249,11 +266,28 @@ class BertNER(BaseTask):
 
     def on_setup_optimizers(self, model, data_bundle: DataBundle,
                             tag_vocab: Vocabulary, state_dict: Optional[dict]):
+        """
+        加载 `Adam` 优化器
+        :param model: 模型
+        :param data_bundle: 预处理后的数据集
+        :param tag_vocab: 生成或加载的 `tag_vocab`
+        :param state_dict: 加载的 `checkpoint`
+        :return: 
+        """
         # 优化器加载阶段
         return torch.optim.Adam(model.parameters(), lr=self.lr)
 
     def on_setup_metrics(self, model, data_bundle: DataBundle,
                          tag_vocab: Vocabulary,
                          state_dict: Optional[dict]) -> dict:
+        """
+        加载 `Accuracy` 评价指标
+
+        :param model: 模型
+        :param data_bundle: 预处理后的数据集
+        :param tag_vocab: 生成或加载的 `tag_vocab`
+        :param state_dict: 加载的 `checkpoint`
+        :return:
+        """
         # 评价指标加载阶段
         return {'accuracy': Accuracy()}

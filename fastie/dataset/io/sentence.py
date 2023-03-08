@@ -1,3 +1,9 @@
+"""
+Sentence dataset for inference.
+"""
+__all__ = [
+    'SentenceConfig', 'Sentence'
+]
 from dataclasses import dataclass, field
 from typing import Union, Sequence, Optional
 
@@ -19,7 +25,7 @@ class SentenceConfig(BaseDatasetConfig):
 @DATASET.register_module('sentence')
 class Sentence(BaseDataset):
     _config = SentenceConfig()
-    _help = 'Input a sequence as a dataset. (Only for inference). '
+    _help = 'Input a sequence or sentences as a dataset. (Only for inference). '
 
     def __init__(self,
                  sentence: Optional[Union[Sequence[str], str]] = None,

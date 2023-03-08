@@ -86,7 +86,7 @@ class BaseNode(object):
 
     def __init__(self, **kwargs):
         self._parser = global_parser.add_argument_group(
-            title=getattr(self, '_help'))
+            title=f"Optional argument for {self.__class__.__name__}")
         self._overload_config: dict = {}
 
     @classmethod

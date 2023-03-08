@@ -1,5 +1,5 @@
 """
-交互器
+Interactor for FastIE
 """
 __all__ = [
     'InteractorConfig',
@@ -54,7 +54,7 @@ class Interactor(BaseController):
             self.inference = Inference(save_path=self.log, verbose=True)
         else:
             self.inference = Inference(verbose=True)
-        set_flag('interact')
+        set_flag('infer')
 
     def run(self,
             parameters_or_data: Optional[Union[dict, DataBundle, DataSet, str,

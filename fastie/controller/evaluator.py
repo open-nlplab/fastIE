@@ -1,7 +1,7 @@
 """
-验证器
+Evaluator for FastIE
 """
-__all__ = ['Evaluator']
+__all__ = ['Evaluator', 'EvaluatorConfig']
 from fastie.controller.BaseController import BaseController, CONTROLLER
 from fastie.envs import set_flag, logger
 from fastie.node import BaseNodeConfig
@@ -17,6 +17,9 @@ from dataclasses import dataclass
 
 @dataclass
 class EvaluatorConfig(BaseNodeConfig):
+    """
+    验证器的配置类
+    """
     pass
 
 

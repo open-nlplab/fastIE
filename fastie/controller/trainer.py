@@ -1,7 +1,7 @@
 """
-训练器
+Trainer for FastIE
 """
-__all__ = ["Trainer"]
+__all__ = ["Trainer", "TrainerConfig"]
 from fastie.controller.BaseController import BaseController, CONTROLLER
 from fastie.envs import set_flag, logger
 from fastie.node import BaseNodeConfig
@@ -17,6 +17,9 @@ from dataclasses import dataclass, field
 
 @dataclass
 class TrainerConfig(BaseNodeConfig):
+    """
+    训练器的配置类
+    """
     pass
 
 
@@ -57,7 +60,7 @@ class Trainer(BaseController):
                 >>> from fastie.tasks import BertNER
                 >>> task = BertNER().run()
                 >>> Evaluator().run(task)
-            * 为数据集，可以是 ``[dict, DataSet, DataBundle, None]`` 类型的数据集：
+            * 为数据集，可以是 ``[dict, Sequence[dict], DataSet, DataBundle, None]`` 类型的数据集：
                 * ``dict`` 类型的数据集，例如:
                     >>> dataset = {'tokens': [ "It", "is", "located", "in", "Seoul", "." ],
                     >>>            'entity_motions': [([4], "LOC")]}
@@ -78,7 +81,7 @@ class Trainer(BaseController):
                     >>> config = {'dataset': 'conll2003'}
                     >>> Evaluator.from_config(config).run()
 
-        :return: ``dict`` 类型的 ``task`` 的 ``state_dict``
+        :return: ``None``
         """
         parameters_or_data = BaseController.run(self, parameters_or_data)
         if parameters_or_data is None:
@@ -88,7 +91,3 @@ class Trainer(BaseController):
             exit(1)
         trainer = FastNLP_Trainer(**parameters_or_data)
         trainer.run()
-        model: dict = {}
-        if hasattr(trainer.model, 'fastie_save_step'):
-            trainer.model.fastie_save_step()
-        return model

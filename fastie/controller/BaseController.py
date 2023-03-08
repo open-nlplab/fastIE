@@ -3,7 +3,8 @@
 """
 
 __all__ = [
-    'BaseController'
+    'BaseController',
+    'CONTROLLER'
 ]
 
 from fastie.node import BaseNode, BaseNodeConfig
@@ -21,7 +22,7 @@ CONTROLLER = Registry('CONTROLLER')
 
 class BaseController(BaseNode):
     """
-    控制器基类
+    Base class for all controllers
     """
 
     def __init__(self, **kwargs):

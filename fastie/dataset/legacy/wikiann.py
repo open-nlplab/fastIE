@@ -1,5 +1,7 @@
-"""这个类还没写好，请勿参考."""
-
+"""
+Wikiann dataset for FastIE. .
+"""
+__all__ = ['Wikiann', 'WikiannConfig']
 from dataclasses import dataclass, field
 
 from datasets import load_dataset
@@ -13,6 +15,9 @@ from fastie.dataset.BaseDataset import DATASET, BaseDataset, BaseDatasetConfig
 
 @dataclass
 class WikiannConfig(BaseDatasetConfig):
+    """
+    Wikiann 数据集配置类
+    """
     language: str = field(
         default='en',
         metadata=dict(help='Select which language subset in wikiann. '
@@ -28,7 +33,8 @@ class Wikiann(BaseDataset):
         参考 https://huggingface.co/datasets/wikiann
     """
     _config = WikiannConfig()
-
+    _help = 'Wikiann for NER task. Refer to ' \
+            'https://huggingface.co/datasets/wikiann for more information.'
     def __init__(self, language: str = 'en', **kwargs):
         super().__init__(**kwargs)
         self.language = language

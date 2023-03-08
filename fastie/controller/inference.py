@@ -1,5 +1,5 @@
 """
-推理器
+Inference tool for FastIE.
 """
 __all__ = [
     'Inference',
@@ -127,7 +127,7 @@ class Inference(BaseController):
             $ fastie-infer --task ner/bert --dataset sentence --sentence It is located in Beijing --verbose
 
     :param save_path: 推理结果的保存路径, 应为一个文件名, 例如 ``result.jsonl``
-    推理结果将保存到 ``save_path`` 中, 保存的格式为 ``jsonl`` 格式, 每行为一个样本的推理结果的 ``json`` 字符串
+    推理结果将保存到 ``save_path`` 中, 保存的格式为 ``jsonlines`` 格式, 每行为一个样本的推理结果的 ``json`` 字符串
 
     :param verbose: 是否在推理的过程中实时打印推理结果
     """
@@ -174,7 +174,7 @@ class Inference(BaseController):
                     >>> dataset = ["It is located in Seoul .", "It is located in Beijing ."]
                 * ``None`` 会自动寻找 ``config`` 中的 ``dataset``, 例如:
                     >>> config = {'dataset': 'conll2003'}
-                    >>> Trainer.from_config(config).run()
+                    >>> Inference.from_config(config).run()
 
             :return: ``List[dict]`` 类型的推理结果, 例如:
                 >>> [{'tokens': [ "It", "is", "located", "in", "Seoul", "." ],
@@ -192,5 +192,4 @@ class Inference(BaseController):
                                            verbose=self.verbose)
         parameters_or_data['metrics'] = {'infer': inference_metric}
         evaluator = Evaluator(**parameters_or_data)
-        evaluator.run()
-        return inference_metric.result
+        return evaluator.run()
