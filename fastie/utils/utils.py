@@ -1,6 +1,7 @@
 import os
+import sys
 from functools import reduce
-from typing import Union, Optional, Set, Tuple
+from typing import Union, Optional, Set, Tuple, List
 
 from fastNLP import Vocabulary, Instance
 from fastNLP.io import DataBundle
@@ -212,3 +213,28 @@ def inspect_function_calling(func_name: str) -> Optional[Set[str]]:
                     # 转换为 set 去除重复项
                     return set(argument_user_provided)
     return None
+
+def inspect_metrics(parameters: dict = {}) -> List[str]:
+    """
+    根据参数中的 metrics 字段，返回真正检验结果中可能存在的 metric 名称.
+
+    例如, 输入参数为 {'metrics': {'accuracy': Accuracy(), 'f1': SpanFPreRecMetric()}}，
+    则返回 ['accuracy#acc', 'f1#f', 'f1#pre', 'f1#rec'].
+
+    :param parameters: 可以用于 :class:`fastNLP.Trainer` 的参数字典.
+    :return: 返回可能存在的 metric 名称列表.
+    """
+    from fastNLP import Trainer
+
+    if 'metrics' not in parameters:
+        return []
+    try:
+        stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+        trainer = Trainer(**parameters)
+        result = trainer.evaluator.run(num_eval_batch_per_dl=1)
+        sys.stdout = stdout
+        return list(result.keys())
+    except Exception as e:
+        logger.error(e)
+        return []

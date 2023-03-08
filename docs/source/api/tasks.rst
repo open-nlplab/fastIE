@@ -9,12 +9,12 @@ fastie.task
     :depth: 2
     :backlinks: top
 
-.. py:currentmodule:: fastie.tasks
+.. currentmodule:: fastie.tasks
 
 Tasks
 ----------------
 
-.. automodule::
+.. autosummary::
     :toctree: generated
     :nosignatures:
     :template: classtemplate.rst

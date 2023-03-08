@@ -1,3 +1,11 @@
+"""
+FastIE 任务基类
+"""
+
+__all__ = [
+    'BaseTask',
+    'BaseTaskConfig'
+]
 import abc
 import os.path
 from dataclasses import dataclass, field
@@ -11,7 +19,8 @@ from fastie.envs import get_flag, logger
 from fastie.node import BaseNode, BaseNodeConfig
 from fastie.utils.hub import Hub
 from fastie.utils.registry import Registry
-from fastie.utils.utils import generate_tag_vocab, check_loaded_tag_vocab
+from fastie.utils.utils import generate_tag_vocab, check_loaded_tag_vocab, \
+    inspect_metrics
 
 NER = Registry('NER')
 RE = Registry('RE')
@@ -440,7 +449,7 @@ class BaseTask(BaseNode):
                         self.cuda[0], int) or isinstance(self.cuda, int):
                     parameters_or_data['device'] = self.cuda
                 # 保存模型参数
-                if self.save_model != '':
+                if self.save_model != '' and get_flag() == "train":
 
                     def fastie_save_step():
                         self._on_get_state_dict_cache \
@@ -466,10 +475,36 @@ class BaseTask(BaseNode):
 
                     setattr(self._on_setup_model_cache, 'fastie_save_step',
                             fastie_save_step)
+                # monitor 相关
+                if get_flag() == "train" \
+                    and (self.topk != 0 or self.load_best_model) \
+                    and isinstance(self._on_setup_metrics_cache, dict) \
+                        and len(self._on_setup_metrics_cache) > 0:
+                    metrics_result = inspect_metrics(parameters_or_data)
+                    if metrics_result:
+                        if self.monitor == "":
+                            logger.info(f"topk and load_best_model require "
+                                        f"monitor to be set. The monitor that "
+                                        f"can be selected include "
+                                        f"[{','.join(metrics_result)}], "
+                                        f"so {metrics_result[0]} will be set "
+                                        f"as monitor")
+                            self.monitor = metrics_result[0]
+                        elif self.monitor not in metrics_result:
+                            logger.warning(f"topk and load_best_model require "
+                                           f"monitor to be set. The monitor "
+                                           f"{self.monitor} you set is not in "
+                                           f"the optional monitor range: "
+                                           f"[{','.join(metrics_result)}], "
+                                           f"so {metrics_result[0]} will be "
+                                           f"set to monitor")
+                        self.monitor = metrics_result[0]
+
                 # topk 相关
                 if self.topk != 0 \
                         and isinstance(self._on_setup_metrics_cache, dict) \
-                        and len(self._on_setup_metrics_cache) > 0:
+                        and len(self._on_setup_metrics_cache) > 0 \
+                        and get_flag() == "train":
 
                     def model_save_fn(folder):
                         Hub.save(os.path.join(folder, "model.bin"),
@@ -486,8 +521,7 @@ class BaseTask(BaseNode):
                         topk=self.topk if self.topk != 0 else -self.topk,
                         larger_better=(self.topk > 0),
                         model_save_fn=model_save_fn,
-                        monitor=self.monitor if self.monitor != '' else list(
-                            self._on_setup_metrics_cache.keys())[0]
+                        monitor=self.monitor
                     )
                     callback = CheckpointCallback(**callback_parameters)
                     if self._on_setup_callbacks_cache is not None:
@@ -499,7 +533,8 @@ class BaseTask(BaseNode):
                 # load_best_model 相关
                 if self.load_best_model \
                         and isinstance(self._on_setup_metrics_cache, dict) \
-                        and len(self._on_setup_metrics_cache) > 0:
+                        and len(self._on_setup_metrics_cache) > 0 \
+                        and get_flag() == "train":
                     def model_save_fn(folder):
                         Hub.save(os.path.join(folder, "model.bin"),
                                  self.on_get_state_dict(
@@ -514,8 +549,7 @@ class BaseTask(BaseNode):
                             os.path.join(folder, "model.bin"))
 
                     callback = LoadBestModelCallback(
-                        monitor=self.monitor if self.monitor != '' else list(
-                            self._on_setup_metrics_cache.keys())[0],
+                        monitor=self.monitor,
                         model_save_fn=model_save_fn,
                         model_load_fn=model_load_fn,
                         save_folder=os.path.join(os.getcwd(),
@@ -528,12 +562,13 @@ class BaseTask(BaseNode):
                             self._on_setup_callbacks_cache
                     else:
                         parameters_or_data['callbacks'] = [callback]
-                # 训练轮数
+                # 轮数
                 parameters_or_data['n_epochs'] = self.epochs
                 # 混合精度
                 parameters_or_data['fp16'] = self.fp16
                 # 验证频率
-                parameters_or_data['evaluate_every'] = self.evaluate_every
+                if get_flag() == 'train':
+                    parameters_or_data['evaluate_every'] = self.evaluate_every
                 # 为 infer 的情景修改执行函数
                 if get_flag() == 'infer' or get_flag() == 'interact':
                     parameters_or_data['evaluate_fn'] = 'inference_step'
