@@ -1,6 +1,4 @@
-"""
-Interactor for FastIE
-"""
+"""Interactor for FastIE."""
 __all__ = [
     'InteractorConfig',
     'Interactor',
@@ -20,9 +18,7 @@ from fastNLP.io import DataBundle
 
 @dataclass
 class InteractorConfig(BaseNodeConfig):
-    """
-    交互器的配置
-    """
+    """交互器的配置."""
     log: str = field(
         default='',
         metadata={
@@ -36,9 +32,7 @@ class InteractorConfig(BaseNodeConfig):
 
 @CONTROLLER.register_module('interactor')
 class Interactor(BaseController):
-    """
-    交互器
-    用于在命令行模式中进行交互式的预测, 例如:
+    """交互器 用于在命令行模式中进行交互式的预测, 例如:
 
         .. code-block:: console
             :linenos:

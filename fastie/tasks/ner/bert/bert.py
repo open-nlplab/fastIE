@@ -1,10 +1,6 @@
-"""
-BertNER
-"""
-__all__ = [
-    "BertNER",
-    "BertNERConfig"
-]
+"""BertNER."""
+__all__ = ['BertNER', 'BertNERConfig']
+
 from dataclasses import dataclass, field
 from functools import reduce
 from typing import Union, Sequence, Optional
@@ -12,17 +8,15 @@ from typing import Union, Sequence, Optional
 import numpy as np
 import torch
 import torch.nn.functional as F
-from fastNLP import prepare_dataloader, Instance, Vocabulary
+from fastNLP import Instance, Vocabulary
 from fastNLP.core.metrics import Accuracy
 from fastNLP.io import DataBundle
 from fastNLP.transformers.torch.models.bert import BertModel, BertConfig, \
     BertTokenizer
 from torch import nn
 
-from fastie.envs import logger
-from fastie.tasks.BaseTask import BaseTask, BaseTaskConfig, NER
+from fastie.tasks.BaseTask import NER
 from fastie.tasks.ner.BaseNERTask import BaseNERTask, BaseNERTaskConfig
-from fastie.utils.utils import generate_tag_vocab, check_loaded_tag_vocab
 
 
 class Model(nn.Module):
@@ -128,25 +122,21 @@ class Model(nn.Module):
 
 @dataclass
 class BertNERConfig(BaseNERTaskConfig):
-    """
-    BertNER 所需参数
-    """
+    """BertNER 所需参数."""
     pretrained_model_name_or_path: str = field(
         default='bert-base-uncased',
         metadata=dict(
             help='name of transformer model (see '
             'https://huggingface.co/transformers/pretrained_models.html for '
             'options).',
-            existence=True))
+            existence='train'))
     lr: float = field(default=2e-5,
                       metadata=dict(help='learning rate', existence='train'))
 
 
 @NER.register_module('bert')
 class BertNER(BaseNERTask):
-    """
-    BertNER
-        使用预训练的 BERT 模型和分类头来做 NER 任务
+    """BertNER 使用预训练的 BERT 模型和分类头来做 NER 任务.
 
     :param pretrained_model_name_or_path: transformers 预训练 BERT 模型名字或路径.
         (see https://huggingface.co/models for options).
@@ -163,42 +153,42 @@ class BertNER(BaseNERTask):
             lr: float = 2e-5,
 
             # 以下是父类的参数，也要复制过来，可以查看一下 BaseTask 参数
-            cuda: Union[bool, int, Sequence[int]] = False,
             load_model: str = '',
-            save_model: str = '',
+            save_model_folder: str = '',
             batch_size: int = 32,
-            shuffle: bool = True,
             epochs: int = 20,
+            monitor: str = '',
+            is_large_better: bool = True,
             topk: int = 0,
             load_best_model: bool = False,
-            monitor: str = '',
             fp16: bool = False,
             evaluate_every: int = -1,
+            device: Union[int, Sequence[int], str] = 'cpu',
             **kwargs):
         # 必须要把父类 （BaseTask）的参数也复制过来，否则用户没有父类的代码提示；
         # 在这里进行父类的初始化；
         # 父类的参数我们不需要进行任何操作，比如这里的 cuda 和 load_model，我们无视就可以了。
-        super(BertNER, self).__init__(cuda=cuda,
-                                      load_model=load_model,
-                                      save_model=save_model,
-                                      batch_size=batch_size,
-                                      shuffle=shuffle,
-                                      epochs=epochs,
-                                      topk=topk,
-                                      monitor=monitor,
-                                      fp16=fp16,
-                                      load_best_model=load_best_model,
-                                      evaluate_every=evaluate_every,
-                                      **kwargs)
+        super().__init__(load_model=load_model,
+                         save_model_folder=save_model_folder,
+                         batch_size=batch_size,
+                         epochs=epochs,
+                         monitor=monitor,
+                         is_large_better=is_large_better,
+                         topk=topk,
+                         load_best_model=load_best_model,
+                         fp16=fp16,
+                         evaluate_every=evaluate_every,
+                         device=device,
+                         **kwargs)
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.lr = lr
 
     def on_dataset_preprocess(self, data_bundle: DataBundle,
                               tag_vocab: Vocabulary,
                               state_dict: Optional[dict]) -> DataBundle:
-        """
-        数据预处理, 包括将 `label` 通过生成或加载的 `tag_vocab` 转化为 id,
-            并将 `tokens` 通过 `BertTokenizer` 转化为 id
+        """数据预处理, 包括将 `label` 通过生成或加载的 `tag_vocab` 转化为 id, 并将 `tokens` 通过
+        `BertTokenizer` 转化为 id.
+
         :param data_bundle: 原始数据
         :param tag_vocab: 生成或加载的 `tag_vocab`
         :param state_dict: 加载的 `checkpoint`
@@ -248,8 +238,8 @@ class BertNER(BaseNERTask):
 
     def on_setup_model(self, data_bundle: DataBundle, tag_vocab: Vocabulary,
                        state_dict: Optional[dict]):
-        """
-        加载 BERT 模型和分类头
+        """加载 BERT 模型和分类头.
+
         :param data_bundle: 预处理后的数据集
         :param tag_vocab: 生成或加载的 `tag_vocab`
         :param state_dict: 加载的 `checkpoint`
@@ -266,13 +256,13 @@ class BertNER(BaseNERTask):
 
     def on_setup_optimizers(self, model, data_bundle: DataBundle,
                             tag_vocab: Vocabulary, state_dict: Optional[dict]):
-        """
-        加载 `Adam` 优化器
+        """加载 `Adam` 优化器.
+
         :param model: 模型
         :param data_bundle: 预处理后的数据集
         :param tag_vocab: 生成或加载的 `tag_vocab`
         :param state_dict: 加载的 `checkpoint`
-        :return: 
+        :return:
         """
         # 优化器加载阶段
         return torch.optim.Adam(model.parameters(), lr=self.lr)
@@ -280,8 +270,7 @@ class BertNER(BaseNERTask):
     def on_setup_metrics(self, model, data_bundle: DataBundle,
                          tag_vocab: Vocabulary,
                          state_dict: Optional[dict]) -> dict:
-        """
-        加载 `Accuracy` 评价指标
+        """加载 `Accuracy` 评价指标.
 
         :param model: 模型
         :param data_bundle: 预处理后的数据集

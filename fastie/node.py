@@ -86,7 +86,7 @@ class BaseNode(object):
 
     def __init__(self, **kwargs):
         self._parser = global_parser.add_argument_group(
-            title=f"Optional argument for {self.__class__.__name__}")
+            title=f'Optional argument for {self.__class__.__name__}')
         self._overload_config: dict = {}
 
     @classmethod
@@ -104,7 +104,10 @@ class BaseNode(object):
             if _config is not None:
                 node._overload_config = _config
                 node._config = node._config.__class__.from_dict(_config)
-        node._config.parse(node)
+            for key, value in _config.items():  # type: ignore [union-attr]
+                if hasattr(node, key):
+                    setattr(node, key, value)
+        # node._config.parse(node)
         return node
 
     @property

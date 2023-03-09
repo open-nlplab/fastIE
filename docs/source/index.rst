@@ -19,7 +19,12 @@ FastIE 具有如下的特性：
    :maxdepth: 2
    :caption: API 文档
 
-   fastie.tasks <api/tasks>
+    fastie.dataset <api/dataset>
+    fastie.tasks <api/tasks>
+    fastie.controller <api/controller>
+
+    fastie.node <api/node>
+
 
 
 索引与搜索

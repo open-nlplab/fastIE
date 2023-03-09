@@ -1,9 +1,5 @@
-"""
-Build dataset from different sources.
-"""
-__all__ = [
-    'build_dataset'
-]
+"""Build dataset from different sources."""
+__all__ = ['build_dataset']
 
 from fastie.dataset.BaseDataset import DATASET
 from fastie.dataset.io.sentence import Sentence
@@ -20,8 +16,7 @@ def build_dataset(dataset: Optional[Union[str, Sequence[str], dict,
                                           Sequence[dict], DataSet,
                                           DataBundle]],
                   dataset_config: Optional[dict] = None) -> DataBundle:
-    """
-    从不同的来源构造数据集
+    """从不同的来源构造数据集.
 
     :param dataset: 可以是 ``str`` 或 ``Sequence[str]`` 或 ``dict``
         或 ``Sequence[dict]`` 或 ``DataSet`` 或 ``DataBundle``:

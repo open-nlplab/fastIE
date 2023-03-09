@@ -1,6 +1,4 @@
-"""
-This module is used to build the task from config.
-"""
+"""This module is used to build the task from config."""
 __all__ = ['build_task']
 from fastie.tasks import NER, RE, EE
 from fastie.envs import get_task

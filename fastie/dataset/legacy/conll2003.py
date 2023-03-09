@@ -1,10 +1,6 @@
-"""
-The shared dataset of CoNLL-2003 concerns language-independent named entity
-recognition.
-"""
-__all__ = [
-    'Conll2003', 'Conll2003Config'
-]
+"""The shared dataset of CoNLL-2003 concerns language-independent named entity
+recognition."""
+__all__ = ['Conll2003', 'Conll2003Config']
 
 from dataclasses import dataclass, field
 
@@ -18,19 +14,14 @@ from fastie.dataset.BaseDataset import BaseDataset, DATASET, BaseDatasetConfig
 
 @dataclass
 class Conll2003Config(BaseDatasetConfig):
-    """
-    Conll2003 数据集的配置类
-    """
+    """Conll2003 数据集的配置类."""
     pass
 
 
 @DATASET.register_module('conll2003')
 class Conll2003(BaseDataset):
-    """
-    The shared task of CoNLL-2003 concerns language-independent named entity
-    recognition.
-
-    """
+    """The shared task of CoNLL-2003 concerns language-independent named entity
+    recognition."""
     _config = Conll2003Config()
     _help = 'Conll2003 for NER task. Refer to ' \
             'https://huggingface.co/datasets/conll2003 for more information.'
@@ -165,13 +156,13 @@ class Conll2003(BaseDataset):
                                 continue
                     else:
                         if len(span) > 0:
-                            entity_mentions.append(
-                                (span,
-                                 idx2tag['ner'][sample['ner_tags'][span[0]]][2:]))
+                            entity_mentions.append((span, idx2tag['ner'][
+                                sample['ner_tags'][span[0]]][2:]))
                             span = []
                 if len(span) > 0:
                     entity_mentions.append(
-                        (span, idx2tag['ner'][sample['ner_tags'][span[0]]][2:]))
+                        (span,
+                         idx2tag['ner'][sample['ner_tags'][span[0]]][2:]))
                 instance.add_field('entity_mentions', entity_mentions)
                 instance.add_field('pos_tags', sample['pos_tags'])
                 instance.add_field('chunk_tags', sample['chunk_tags'])

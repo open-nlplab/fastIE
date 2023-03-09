@@ -1,14 +1,6 @@
-"""
-Base class for all FastIE tasks.
-"""
+"""Base class for all FastIE tasks."""
 
-__all__ = [
-    'BaseTask',
-    'BaseTaskConfig',
-    'NER',
-    'RE',
-    'EE'
-]
+__all__ = ['BaseTask', 'BaseTaskConfig', 'NER', 'RE', 'EE']
 
 import abc
 import os.path
@@ -38,43 +30,47 @@ class BaseTaskConfig(BaseNodeConfig, metaclass=abc.ABCMeta):
                       existence=True))
     save_model_folder: str = field(
         default='',
-        metadata=dict(help='The folder to save the model when using `topk` or `load_best_model`. '
-                           'If not set, all models will be saved in the current directory.',
-                      existence='train'))
+        metadata=dict(
+            help=
+            'The folder to save the model when using `topk` or `load_best_model`. '
+            'If not set, all models will be saved in the current directory.',
+            existence='train'))
     batch_size: int = field(default=32,
                             metadata=dict(help='Batch size. ', existence=True))
     epochs: int = field(default=20,
                         metadata=dict(help='Total number of training epochs. ',
                                       existence='train'))
-    evaluate_every: int = field(default=-1,
-                                metadata=dict(
-                                    help='Frequency of evaluation. '
-                                         'If the value is positive, '
-                                         'the evaluation is performed once every n batch. '
-                                         'If the value is negative, '
-                                         'the evaluation is performed once every n epochs ',
-                                    existence='train'))
-    monitor: str = field(default='',
-                         metadata=dict(
-                             help='The metric name which is used to select '
-                                  'the best model when using `topk` or `load_best_model`. '
-                                  'If not set, the first metric will be used',
-                             existence='train'))
-    is_large_better: str = field(default="True",
+    evaluate_every: int = field(
+        default=-1,
+        metadata=dict(help='Frequency of evaluation. '
+                      'If the value is positive, '
+                      'the evaluation is performed once every n batch. '
+                      'If the value is negative, '
+                      'the evaluation is performed once every n epochs ',
+                      existence='train'))
+    monitor: str = field(
+        default='',
+        metadata=dict(help='The metric name which is used to select '
+                      'the best model when using `topk` or `load_best_model`. '
+                      'If not set, the first metric will be used',
+                      existence='train'))
+    is_large_better: str = field(default='True',
                                  metadata=dict(
                                      help='Is the `metric` monitored by '
-                                          '`monitor` the larger the better. ',
-                                     existence='train')
-                                 )
-    topk: int = field(default=0,
-                      metadata=dict(
-                          help='Save the top-k model to `save_model_folder`/fastie_topk_model '
-                               'according to the `monitor`. ',
-                          existence='train'))
-    load_best_model: bool = field(default=False,
-                                  metadata=dict(
-                                      help='Save the best model to `save_model_folder`/fastie_best_model according to the `monitor`. ',
-                                      existence='train'))
+                                     '`monitor` the larger the better. ',
+                                     existence='train'))
+    topk: int = field(
+        default=0,
+        metadata=dict(
+            help='Save the top-k model to `save_model_folder`/fastie_topk_model '
+            'according to the `monitor`. ',
+            existence='train'))
+    load_best_model: bool = field(
+        default=False,
+        metadata=dict(
+            help=
+            'Save the best model to `save_model_folder`/fastie_best_model according to the `monitor`. ',
+            existence='train'))
 
     fp16: bool = field(default=False,
                        metadata=dict(help='Enable mixed-precision training. ',
@@ -83,13 +79,13 @@ class BaseTaskConfig(BaseNodeConfig, metaclass=abc.ABCMeta):
     device: str = field(
         default='cpu',
         metadata=dict(
-            help='Specifies the devices to use. If you want to use multiple GPUs, connect the GPU id with a `,`',
+            help=
+            'Specifies the devices to use. If you want to use multiple GPUs, connect the GPU id with a `,`',
             existence=True))
 
 
 class BaseTask(BaseNode, metaclass=abc.ABCMeta):
-    """
-    FastIE 的任务基类，所有任务需要继承基类并重写生命周期方法。
+    """FastIE 的任务基类，所有任务需要继承基类并重写生命周期方法。
 
     :param load_model: 模型文件的路径或者模型名
     :param save_model_folder: ``topk`` 或 ``load_best_model`` 保存模型的文件夹
@@ -117,7 +113,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
             * *list(int)*: 如果多于 1 个device，应当通过该种方式进行设定，将会启用分布式程序。
     """
     _config = BaseTaskConfig()
-    _help = "Base class for all tasks. "
+    _help = 'Base class for all tasks. '
 
     def __init__(self,
                  load_model: str = '',
@@ -151,7 +147,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
         self._on_dataset_preprocess_cache: Any = None
         self._on_setup_model_cache: Any = None
         self._on_setup_optimizers_cache: Any = None
-        self._on_setup_dataloader_cache: Any = None
+        self._on_setup_dataloader_cache: dict = {}
         self._on_setup_callbacks_cache: Union[Callback, Sequence[Callback]] \
             = []
         self._on_setup_metrics_cache: Any = None
@@ -164,8 +160,8 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                                         state_dict: Optional[dict]) \
             -> Optional[Vocabulary]:
         """根据数据集中的已标注数据的标签词频生成标签词典。 如果加载模型得到的 ``state_dict`` 中存在
-        ``tag_vocab``，则检查是否与根据 ``data_bundle`` 生成的 tag_vocab 一致
-        (优先使用加载得到的 tag_vocab)。
+        ``tag_vocab``，则检查是否与根据 ``data_bundle`` 生成的 tag_vocab 一致 (优先使用加载得到的
+        tag_vocab)。
 
         :param data_bundle: 原始数据集，
             可能包含 ``train``、``dev``、``test``、``infer`` 四种，需要分类处理。
@@ -191,8 +187,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                                   'method must be implemented. ')
 
     @abc.abstractmethod
-    def on_setup_model(self,
-                       data_bundle: DataBundle,
+    def on_setup_model(self, data_bundle: DataBundle,
                        tag_vocab: Optional[Vocabulary],
                        state_dict: Optional[dict]):
         """模型构建，包括模型的初始化和加载。必须重写.
@@ -207,9 +202,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
         raise NotImplementedError('Model setup method must be implemented. ')
 
     @abc.abstractmethod
-    def on_setup_optimizers(self,
-                            model,
-                            data_bundle: DataBundle,
+    def on_setup_optimizers(self, model, data_bundle: DataBundle,
                             tag_vocab: Optional[Vocabulary],
                             state_dict: Optional[dict]):
         """优化器构建，包括优化器的初始化和加载。必须重写.
@@ -223,42 +216,61 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
         raise NotImplementedError(
             'Optimizer setup method must be implemented. ')
 
-    def on_setup_dataloader(self,
-                            model,
-                            data_bundle: DataBundle,
+    def on_setup_dataloader(self, model, data_bundle: DataBundle,
                             tag_vocab: Optional[Vocabulary],
-                            state_dict: Optional[dict]):
+                            state_dict: Optional[dict]) -> dict:
         """数据加载器构建，包括数据加载器的初始化和加载。不需要重写.
 
         :param model: 初始化和加载后的模型
         :param data_bundle: 预处理后的数据集
         :param tag_vocab: 标签词典
         :param state_dict: 加载模型得到的 ``state_dict``，可能为 ``None``
-        :return: 返回值可用是可迭代的 dataloader，也可以返回多个 dataloader，
-            当 flag 为 train 的时候返回的第一个 dataloader 会被用于训练，其他的用于验证
-            当 flag 为 eval 或 infer 的时候都会被用于验证或推理，
+        :return: 返回值为 ``dict`` 对象, 其中 key 为 ``train`` 的会被用作训练集,
+            其他的会被根据当前控制器的 ``flag`` 选择而被设置为验证集, 测试机, 和推理集:
+
+            例如:
+
+            .. code-block:: python
+            {
+                'train': train_dataloader,
+                'dev1': dev_dataloader,
+                'dev2': dev_dataloader,
+            }
         """
         if get_flag() == 'train':
             if 'dev' in data_bundle.datasets.keys():
-                return prepare_dataloader(
-                    data_bundle.datasets['train'],
-                    batch_size=self.batch_size,
-                    shuffle=True), \
+                return {
+                    'train':
+                    prepare_dataloader(data_bundle.datasets['train'],
+                                       batch_size=self.batch_size,
+                                       shuffle=True),
+                    'dev':
                     prepare_dataloader(data_bundle.datasets['dev'],
                                        batch_size=self.batch_size,
                                        shuffle=False)
+                }
             else:
-                return prepare_dataloader(data_bundle.datasets['train'],
-                                          batch_size=self.batch_size,
-                                          shuffle=True)
+                return {
+                    'train':
+                    prepare_dataloader(data_bundle.datasets['train'],
+                                       batch_size=self.batch_size,
+                                       shuffle=True)
+                }
         elif get_flag() == 'eval':
-            return prepare_dataloader(data_bundle.datasets['test'],
-                                      batch_size=self.batch_size,
-                                      shuffle=False)
-        elif get_flag() == 'infer' or get_flag() == 'interact':
-            return prepare_dataloader(data_bundle.datasets['infer'],
-                                      batch_size=self.batch_size,
-                                      shuffle=False)
+            return {
+                'test':
+                prepare_dataloader(data_bundle.datasets['test'],
+                                   batch_size=self.batch_size,
+                                   shuffle=False)
+            }
+        elif get_flag() == 'infer':
+            return {
+                'infer':
+                prepare_dataloader(data_bundle.datasets['infer'],
+                                   batch_size=self.batch_size,
+                                   shuffle=False)
+            }
+        return {}
 
     def on_setup_callbacks(self, model,
                            data_bundle: DataBundle,
@@ -384,7 +396,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                             'The model you are using does not '
                             'have a `inference_step` method, which '
                             'is required for inferring.')
-                if get_flag() == "train":
+                if get_flag() == 'train':
                     if not self._on_setup_optimizers_cache:
                         self._on_setup_optimizers_cache = \
                             self.on_setup_optimizers(
@@ -402,25 +414,16 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                         data_bundle=self._on_dataset_preprocess_cache,
                         tag_vocab=self._on_generate_and_check_tag_vocab_cache,
                         state_dict=self._on_get_state_dict_cache)
-                dataloaders = self._on_setup_dataloader_cache
-                if isinstance(dataloaders, tuple):
-                    if get_flag() == 'train':
-                        parameters_or_data['train_dataloader'] = dataloaders[0]
-                        if hasattr(parameters_or_data['model'],
-                                   'evaluate_step'):
-                            parameters_or_data['evaluate_dataloaders'] = \
-                                {f'dataloader-{i}': dataloaders[i]
-                                 for i in range(1, len(dataloaders[1:]) + 1)}
-                    else:
-                        parameters_or_data['evaluate_dataloaders'] = \
-                            {f'dataloader-{i + 1}': dataloaders[i]
-                             for i in range(len(dataloaders))}
-                else:
-                    if get_flag() == 'train':
-                        parameters_or_data['train_dataloader'] = dataloaders
-                    else:
-                        parameters_or_data['evaluate_dataloaders'] = \
-                            dataloaders
+                if get_flag() == 'train':
+                    if 'train' in self._on_setup_dataloader_cache.keys():
+                        parameters_or_data['train_dataloader'] = \
+                            self._on_setup_dataloader_cache.pop('train')
+                if len(self._on_setup_dataloader_cache) == 1:
+                    parameters_or_data['evaluate_dataloaders'] = \
+                        next(iter(self._on_setup_dataloader_cache.values()))
+                elif len(self._on_setup_dataloader_cache) > 1:
+                    parameters_or_data['evaluate_dataloaders'] = \
+                        self._on_setup_dataloader_cache
                 # callbacks 部分
                 self._on_setup_callbacks_cache = \
                     self.on_setup_callbacks(
@@ -455,10 +458,11 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                         self._on_setup_extra_fastnlp_parameters_cache)
                 # 结束生命周期
 
-                # deivce 相关参数
+                # device 相关参数
                 if isinstance(self.device, str):
                     if ',' in self.device:
-                        parameters_or_data['device'] = list(map(lambda x: int(x), self.device.split(',')))
+                        parameters_or_data['device'] = list(
+                            map(lambda x: int(x), self.device.split(',')))
                     elif self.device.isdigit():
                         parameters_or_data['device'] = int(self.device)
                     else:
@@ -466,55 +470,55 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                 else:
                     parameters_or_data['device'] = self.device
                 # 保存模型相关
-                if self.save_model_folder == "":
+                if self.save_model_folder == '':
                     self.save_model_folder = os.getcwd()
                 # monitor 相关
-                if get_flag() == "train" \
+                if get_flag() == 'train' \
                         and (self.topk != 0 or self.load_best_model) \
                         and isinstance(self._on_setup_metrics_cache, dict) \
                         and len(self._on_setup_metrics_cache) > 0:
                     metrics_result = inspect_metrics(parameters_or_data)
                     if metrics_result:
-                        if self.monitor == "":
-                            logger.info(f"topk and load_best_model require "
-                                        f"monitor to be set. The monitor that "
-                                        f"can be selected include "
+                        if self.monitor == '':
+                            logger.info(f'topk and load_best_model require '
+                                        f'monitor to be set. The monitor that '
+                                        f'can be selected include '
                                         f"[{','.join(metrics_result)}], "
-                                        f"so {metrics_result[0]} will be set "
-                                        f"as monitor")
+                                        f'so {metrics_result[0]} will be set '
+                                        f'as monitor')
                             self.monitor = metrics_result[0]
                         elif self.monitor not in metrics_result:
-                            logger.warning(f"topk and load_best_model require "
-                                           f"monitor to be set. The monitor "
-                                           f"{self.monitor} you set is not in "
-                                           f"the optional monitor range: "
+                            logger.warning(f'topk and load_best_model require '
+                                           f'monitor to be set. The monitor '
+                                           f'{self.monitor} you set is not in '
+                                           f'the optional monitor range: '
                                            f"[{','.join(metrics_result)}], "
-                                           f"so {metrics_result[0]} will be "
-                                           f"set to monitor")
+                                           f'so {metrics_result[0]} will be '
+                                           f'set to monitor')
                         self.monitor = metrics_result[0]
                 # is_large_better
                 if isinstance(self.is_large_better, str):
-                    if self.is_large_better.lower() == "true":
+                    if self.is_large_better.lower() == 'true':
                         self.is_large_better = True
-                    elif self.is_large_better.lower() == "false":
+                    elif self.is_large_better.lower() == 'false':
                         self.is_large_better = False
                     else:
-                        raise ValueError(f"`is_large_better` must be `True` or "
-                                         f"`False`, but got {self.is_large_better}")
+                        raise ValueError(
+                            f'`is_large_better` must be `True` or '
+                            f'`False`, but got {self.is_large_better}')
                 # topk 相关
                 if self.topk != 0 \
-                        and self.monitor != "" \
-                        and get_flag() == "train":
+                        and self.monitor != '' \
+                        and get_flag() == 'train':
 
                     def model_save_fn(folder):
-                        Hub.save(os.path.join(folder, "model.bin"),
-                                 self.on_get_state_dict(
-                                     model=self._on_setup_model_cache,
-                                     data_bundle=
-                                     self._on_dataset_preprocess_cache,
-                                     tag_vocab=
-                                     self._on_generate_and_check_tag_vocab_cache
-                                 ))
+                        Hub.save(
+                            os.path.join(folder, 'model.bin'),
+                            self.on_get_state_dict(
+                                model=self._on_setup_model_cache,
+                                data_bundle=self._on_dataset_preprocess_cache,
+                                tag_vocab=self.
+                                _on_generate_and_check_tag_vocab_cache))
 
                     callback_parameters = dict(
                         folder=os.path.join(self.save_model_folder,
@@ -522,8 +526,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                         topk=self.topk if self.topk != 0 else -self.topk,
                         larger_better=self.is_large_better,
                         model_save_fn=model_save_fn,
-                        monitor=self.monitor
-                    )
+                        monitor=self.monitor)
                     callback = CheckpointCallback(**callback_parameters)
                     if self._on_setup_callbacks_cache is not None:
                         self._on_setup_callbacks_cache.append(callback)
@@ -535,20 +538,20 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                 if self.load_best_model \
                         and isinstance(self._on_setup_metrics_cache, dict) \
                         and len(self._on_setup_metrics_cache) > 0 \
-                        and get_flag() == "train":
+                        and get_flag() == 'train':
+
                     def model_save_fn(folder):
-                        Hub.save(os.path.join(folder, "model.bin"),
-                                 self.on_get_state_dict(
-                                     model=self._on_setup_model_cache,
-                                     data_bundle=
-                                     self._on_dataset_preprocess_cache,
-                                     tag_vocab=
-                                     self._on_generate_and_check_tag_vocab_cache
-                                 ))
+                        Hub.save(
+                            os.path.join(folder, 'model.bin'),
+                            self.on_get_state_dict(
+                                model=self._on_setup_model_cache,
+                                data_bundle=self._on_dataset_preprocess_cache,
+                                tag_vocab=self.
+                                _on_generate_and_check_tag_vocab_cache))
 
                     def model_load_fn(folder):
                         self._on_get_state_dict_cache = Hub.load(
-                            os.path.join(folder, "model.bin"))
+                            os.path.join(folder, 'model.bin'))
                         self._on_setup_model_cache = None
 
                     callback = LoadBestModelCallback(
@@ -558,8 +561,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                         save_folder=os.path.join(self.save_model_folder,
                                                  'fastie_best_model_cache'),
                         delete_after_train=False,
-                        larger_better=self.is_large_better
-                    )
+                        larger_better=self.is_large_better)
                     if self._on_setup_callbacks_cache is not None:
                         self._on_setup_callbacks_cache.append(callback)
                         parameters_or_data['callbacks'] = \

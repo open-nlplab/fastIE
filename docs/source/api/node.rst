@@ -1,17 +1,17 @@
 .. role:: hidden
     :class: hidden-section
 
-fastie.controller
+fastie.node
 ===================================
 
-.. contents:: fastie.controller
+.. contents:: fastie.node
     :local:
     :depth: 2
     :backlinks: top
 
-.. currentmodule:: fastie.controller
+.. currentmodule:: fastie.node
 
-Controller
+Node
 ----------------
 
 .. autosummary::
@@ -19,7 +19,5 @@ Controller
     :nosignatures:
     :template: classtemplate.rst
 
-    Trainer
-    Evaluator
-    Inference
-    Interactor
+    BaseNode
+    BaseNodeConfig

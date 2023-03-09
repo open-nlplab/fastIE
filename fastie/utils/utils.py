@@ -214,9 +214,9 @@ def inspect_function_calling(func_name: str) -> Optional[Set[str]]:
                     return set(argument_user_provided)
     return None
 
+
 def inspect_metrics(parameters: dict = {}) -> List[str]:
-    """
-    根据参数中的 metrics 字段，返回真正检验结果中可能存在的 metric 名称.
+    """根据参数中的 metrics 字段，返回真正检验结果中可能存在的 metric 名称.
 
     例如, 输入参数为 {'metrics': {'accuracy': Accuracy(), 'f1': SpanFPreRecMetric()}}，
     则返回 ['accuracy#acc', 'f1#f', 'f1#pre', 'f1#rec'].

@@ -1,6 +1,4 @@
-"""
-Evaluator for FastIE
-"""
+"""Evaluator for FastIE."""
 __all__ = ['Evaluator', 'EvaluatorConfig']
 from fastie.controller.BaseController import BaseController, CONTROLLER
 from fastie.envs import set_flag, logger
@@ -17,27 +15,23 @@ from dataclasses import dataclass
 
 @dataclass
 class EvaluatorConfig(BaseNodeConfig):
-    """
-    验证器的配置类
-    """
+    """验证器的配置类."""
     pass
 
 
 @CONTROLLER.register_module('evaluator')
 class Evaluator(BaseController):
-    """
-    验证器
-    用于对任务在 ``test`` 数据集上进行检验，并输出 ``test`` 数据集上的 ``metric``
-    """
+    """验证器 用于对任务在 ``test`` 数据集上进行检验，并输出 ``test`` 数据集上的 ``metric``"""
+
     def __init__(self):
         super(Evaluator, self).__init__()
         set_flag('eval')
 
-    def run(self,
-            parameters_or_data: Optional[Union[dict, DataBundle, DataSet]]
-            = None) -> dict:
-        """
-        验证器的 ``run`` 方法，用于实际地对传入的 ``task`` 或是数据集进行验证
+    def run(
+        self,
+        parameters_or_data: Optional[Union[dict, DataBundle, DataSet]] = None
+    ) -> dict:
+        """验证器的 ``run`` 方法，用于实际地对传入的 ``task`` 或是数据集进行验证.
 
         也可以使用命令行模式, 例如:
 

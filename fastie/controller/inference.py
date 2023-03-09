@@ -1,11 +1,5 @@
-"""
-Inference tool for FastIE.
-"""
-__all__ = [
-    'Inference',
-    'InferenceConfig',
-    'InferenceMetric'
-]
+"""Inference tool for FastIE."""
+__all__ = ['Inference', 'InferenceConfig', 'InferenceMetric']
 import json
 from dataclasses import dataclass
 from dataclasses import field
@@ -21,8 +15,8 @@ from fastie.node import BaseNodeConfig
 
 
 class InferenceMetric(Metric):
-    """
-    用于保存推理结果的 Metric
+    """用于保存推理结果的 Metric.
+
     :param save_path: 保存路径, 应为一个文件名, 例如 ``result.jsonl``
     :param verbose: 是否打印推理结果
     """
@@ -96,9 +90,7 @@ def generate_step_fn(evaluator, batch):
 
 @dataclass
 class InferenceConfig(BaseNodeConfig):
-    """
-    推理器的配置
-    """
+    """推理器的配置."""
     save_path: Optional[str] = field(
         default=None,
         metadata=dict(
@@ -116,9 +108,7 @@ class InferenceConfig(BaseNodeConfig):
 
 @CONTROLLER.register_module('inference')
 class Inference(BaseController):
-    """
-    推理器
-    用于对任务在 ``infer`` 数据集上进行检验，并输出 ``infer`` 数据集上的推理结果
+    """推理器 用于对任务在 ``infer`` 数据集上进行检验，并输出 ``infer`` 数据集上的推理结果.
 
     也可以使用命令行模式, 例如:
 
@@ -133,6 +123,7 @@ class Inference(BaseController):
     """
     _config = InferenceConfig()
     _help = 'Inference tool for FastIE. '
+
     def __init__(self,
                  save_path: Optional[str] = None,
                  verbose: bool = True,
@@ -145,8 +136,7 @@ class Inference(BaseController):
     def run(self,
             parameters_or_data: Optional[Union[dict, DataBundle, DataSet, str,\
                     Sequence[str]]] = None) -> Sequence[dict]:
-        """
-        验证器的 ``run`` 方法，用于实际地对传入的 ``task`` 或是数据集进行推理
+        """验证器的 ``run`` 方法，用于实际地对传入的 ``task`` 或是数据集进行推理.
 
         :param parameters_or_data: 既可以是 task，也可以是数据集:
             * 为 ``task`` 时, 应为 :class:`~fastie.BaseTask` 对象 ``run``
@@ -179,7 +169,7 @@ class Inference(BaseController):
             :return: ``List[dict]`` 类型的推理结果, 例如:
                 >>> [{'tokens': [ "It", "is", "located", "in", "Seoul", "." ],
                 >>>   'entity_motions': [([4], "LOC")]}]
-            """
+        """
         parameters_or_data = BaseController.run(self, parameters_or_data)
         if parameters_or_data is None:
             logger.error(

@@ -15,9 +15,7 @@ from fastie.dataset.BaseDataset import DATASET, BaseDataset, BaseDatasetConfig
 
 @dataclass
 class WikiannConfig(BaseDatasetConfig):
-    """
-    Wikiann 数据集配置类
-    """
+    """Wikiann 数据集配置类."""
     language: str = field(
         default='en',
         metadata=dict(help='Select which language subset in wikiann. '
@@ -35,6 +33,7 @@ class Wikiann(BaseDataset):
     _config = WikiannConfig()
     _help = 'Wikiann for NER task. Refer to ' \
             'https://huggingface.co/datasets/wikiann for more information.'
+
     def __init__(self, language: str = 'en', **kwargs):
         super().__init__(**kwargs)
         self.language = language
@@ -82,7 +81,8 @@ class Wikiann(BaseDataset):
                     else:
                         if len(span) > 0:
                             entity_mentions.append(
-                                (span, idx2tag[sample['ner_tags'][span[0]]][2:]))
+                                (span,
+                                 idx2tag[sample['ner_tags'][span[0]]][2:]))
                             span = []
                 if len(span) > 0:
                     entity_mentions.append(

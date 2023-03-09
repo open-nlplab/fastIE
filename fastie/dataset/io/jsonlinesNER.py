@@ -1,6 +1,4 @@
-"""
-JsonLinesNER dataset for FastIE.
-"""
+"""JsonLinesNER dataset for FastIE."""
 __all__ = ['JsonLinesNER', 'JsonLinesNERConfig']
 import json
 import os
@@ -16,9 +14,7 @@ from typing import Union, Dict
 
 @dataclass
 class JsonLinesNERConfig(BaseDatasetConfig):
-    """
-    JsonLinesNER 数据集配置类
-    """
+    """JsonLinesNER 数据集配置类."""
     folder: str = field(
         default='',
         metadata=dict(help='The folder where the data set resides. '
@@ -35,9 +31,8 @@ class JsonLinesNERConfig(BaseDatasetConfig):
 
 @DATASET.register_module('jsonlines-ner')
 class JsonLinesNER(BaseDataset):
-    """
-    JsonLinesNER dataset for FastIE.
-    Each row has a NER sample in json format:
+    """JsonLinesNER dataset for FastIE. Each row has a NER sample in json
+    format:
 
     .. code-block:: json
     {
@@ -67,10 +62,10 @@ class JsonLinesNER(BaseDataset):
         whether each span contains the token corresponding to end.
     :param cache: Whether to cache the dataset.
     :param refresh_cache: Whether to refresh the cache.
-
     """
     _config = JsonLinesNERConfig()
     _help = 'JsonLinesNER dataset for FastIE. Each row has a NER sample in json format. '
+
     def __init__(self,
                  folder: str = '',
                  right_inclusive: bool = False,
@@ -113,14 +108,14 @@ class JsonLinesNER(BaseDataset):
                                     ) and 'end' in entity_mention.keys():
                                         if node.right_inclusive:
                                             entity_mentions.append((list(
-                                                range(entity_mention['start'],
-                                                      entity_mention['end'])
-                                            ), entity_mention['entity_type']))
-                                        else:
-                                            entity_mentions.append((list(
                                                 range(
                                                     entity_mention['start'],
                                                     entity_mention['end'] + 1)
+                                            ), entity_mention['entity_type']))
+                                        else:
+                                            entity_mentions.append((list(
+                                                range(entity_mention['start'],
+                                                      entity_mention['end'])
                                             ), entity_mention['entity_type']))
                                 instance.add_field('entity_mentions',
                                                    entity_mentions)

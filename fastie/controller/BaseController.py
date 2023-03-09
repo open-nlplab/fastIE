@@ -1,11 +1,6 @@
-"""
-控制器基类
-"""
+"""控制器基类."""
 
-__all__ = [
-    'BaseController',
-    'CONTROLLER'
-]
+__all__ = ['BaseController', 'CONTROLLER']
 
 from fastie.node import BaseNode, BaseNodeConfig
 from fastie.utils import Registry, parse_config
@@ -21,19 +16,16 @@ CONTROLLER = Registry('CONTROLLER')
 
 
 class BaseController(BaseNode):
-    """
-    Base class for all controllers
-    """
+    """Base class for all controllers."""
 
     def __init__(self, **kwargs):
         BaseNode.__init__(self, **kwargs)
 
     def run(self,
             parameters_or_data: Optional[Union[dict, DataBundle, DataSet, str,
-            Sequence[str], Sequence[dict]]] = None):
-        """
-        控制器基类的 ``run`` 方法，用于实际地对传入的 ``task`` 或是数据集进行训练,
-        验证或推理
+                                               Sequence[str],
+                                               Sequence[dict]]] = None):
+        """控制器基类的 ``run`` 方法，用于实际地对传入的 ``task`` 或是数据集进行训练, 验证或推理.
 
         :param parameters_or_data: 既可以是 task，也可以是数据集:
             * 为 ``task`` 时, 应为 :class:`~fastie.BaseTask` 对象 ``run``
@@ -90,8 +82,8 @@ class BaseController(BaseNode):
             return parameters_or_data
 
     def __call__(self, *args, **kwargs):
-        """
-        重载 ``__call__`` 方法，使得控制器可以直接调用 ``run`` 方法
+        """重载 ``__call__`` 方法，使得控制器可以直接调用 ``run`` 方法.
+
         :param args: 与 ``run`` 方法的参数一致
         :param kwargs: 与 ``run`` 方法的参数一致
         :return: 与 ``run`` 方法的返回结果一致

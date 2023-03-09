@@ -1,8 +1,5 @@
-"""
-Base class for all FastIE datasets.
-"""
-__all__ = [
-    'BaseDataset', 'BaseDatasetConfig', 'load_dataset', 'DATASET']
+"""Base class for all FastIE datasets."""
+__all__ = ['BaseDataset', 'BaseDatasetConfig', 'load_dataset', 'DATASET']
 import os
 import abc
 from dataclasses import dataclass, field
@@ -17,11 +14,11 @@ DATASET = Registry('DATASET')
 
 
 def load_dataset(name, *args, **kwargs):
-    """
-    根据 dataset 的注册名字加载 dataset 对象.
-    :param name:
-    :param args:
-    :param kwargs:
+    """根据 dataset 的注册名字加载 dataset 对象.
+
+    :param name: dataset 的注册名字.
+    :param args: dataset 的参数.
+    :param kwargs: dataset 的参数.
     :return:
     """
     return DATASET.get(name)(*args, **kwargs)
@@ -29,6 +26,9 @@ def load_dataset(name, *args, **kwargs):
 
 @dataclass
 class BaseDatasetConfig(BaseNodeConfig):
+    """
+    FastIE 数据集基类的配置类.
+    """
     use_cache: bool = field(
         default=False,
         metadata=dict(
@@ -42,8 +42,7 @@ class BaseDatasetConfig(BaseNodeConfig):
 
 
 class BaseDataset(BaseNode, metaclass=abc.ABCMeta):
-    """
-    FastIE 数据集基类.
+    """FastIE 数据集基类.
 
     :param cache: 是否缓存数据集.
     :param refresh_cache: 是否刷新缓存.
@@ -78,11 +77,11 @@ class BaseDataset(BaseNode, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def run(self):
-        """
-        加载数据集, 返回一个 DataBundle 对象.
+        """加载数据集, 返回一个 DataBundle 对象.
+
         :return:
         """
-        raise NotImplementedError("The `run` method must be implemented. ")
+        raise NotImplementedError('The `run` method must be implemented. ')
 
     def __call__(self, *args, **kwargs):
         return self.run()

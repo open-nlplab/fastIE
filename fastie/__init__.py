@@ -14,6 +14,7 @@ __all__ = [
     'parse_config', 'NER', 'EE', 'RE', 'DATASET', 'CONTROLLER', 'Trainer',
     'TrainerConfig', 'Evaluator', 'EvaluatorConfig', 'Inference',
     'InferenceConfig', 'Interactor', 'InteractorConfig', 'Registry', 'Config',
-    'Hub', 'logger', 'generate_tag_vocab', 'check_loaded_tag_vocab', 'BaseTask'
-    , 'BaseTaskConfig', 'BaseDataset', 'BaseDatasetConfig', 'get_task'
+    'Hub', 'logger', 'generate_tag_vocab', 'check_loaded_tag_vocab',
+    'BaseTask', 'BaseTaskConfig', 'BaseDataset', 'BaseDatasetConfig',
+    'get_task'
 ]

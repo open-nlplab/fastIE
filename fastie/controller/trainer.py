@@ -1,7 +1,5 @@
-"""
-Trainer for FastIE
-"""
-__all__ = ["Trainer", "TrainerConfig"]
+"""Trainer for FastIE."""
+__all__ = ['Trainer', 'TrainerConfig']
 from fastie.controller.BaseController import BaseController, CONTROLLER
 from fastie.envs import set_flag, logger
 from fastie.node import BaseNodeConfig
@@ -17,17 +15,13 @@ from dataclasses import dataclass, field
 
 @dataclass
 class TrainerConfig(BaseNodeConfig):
-    """
-    训练器的配置类
-    """
+    """训练器的配置类."""
     pass
 
 
 @CONTROLLER.register_module('trainer')
 class Trainer(BaseController):
-    """
-    训练器
-    用于对任务在 ``train`` 数据集上进行训练，并输出 ``dev`` 数据集上的 ``metric``
+    """训练器 用于对任务在 ``train`` 数据集上进行训练，并输出 ``dev`` 数据集上的 ``metric``
 
     也可以使用命令行模式, 例如:
 
@@ -45,8 +39,7 @@ class Trainer(BaseController):
     def run(self,
             parameters_or_data: Optional[Union[dict, DataBundle, DataSet, str,
                                                Sequence[str]]] = None):
-        """
-        验证器的 ``run`` 方法，用于实际地对传入的 ``task`` 或是数据集进行验证
+        """验证器的 ``run`` 方法，用于实际地对传入的 ``task`` 或是数据集进行验证.
 
         也可以使用命令行模式, 例如:
 

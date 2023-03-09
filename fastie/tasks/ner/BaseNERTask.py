@@ -1,10 +1,5 @@
-"""
-Base class for NER tasks
-"""
-__all__ = [
-    'BaseNERTask',
-    'BaseNERTaskConfig'
-]
+"""Base class for NER tasks."""
+__all__ = ['BaseNERTask', 'BaseNERTaskConfig']
 from fastie.tasks.BaseTask import BaseTask, BaseTaskConfig
 from fastie.utils.utils import generate_tag_vocab, check_loaded_tag_vocab
 from fastie.envs import logger
@@ -16,14 +11,14 @@ import abc
 
 from typing import Union, Sequence, Optional
 
+
 class BaseNERTaskConfig(BaseTaskConfig):
-    """
-    NER 任务所需参数
-    """
+    """NER 任务所需参数."""
     pass
+
+
 class BaseNERTask(BaseTask, metaclass=abc.ABCMeta):
-    """
-    FastIE NER 任务基类
+    """FastIE NER 任务基类.
 
     :param load_model: 模型文件的路径或者模型名
     :param save_model_folder: ``topk`` 或 ``load_best_model`` 保存模型的文件夹
@@ -52,7 +47,7 @@ class BaseNERTask(BaseTask, metaclass=abc.ABCMeta):
     """
 
     _config = BaseNERTaskConfig()
-    _help = "Base class for NER tasks. "
+    _help = 'Base class for NER tasks. '
 
     def __init__(self,
                  load_model: str = '',
@@ -68,18 +63,16 @@ class BaseNERTask(BaseTask, metaclass=abc.ABCMeta):
                  device: Union[int, Sequence[int], str] = 'cpu',
                  **kwargs):
         super().__init__(load_model, save_model_folder, batch_size, epochs,
-                            monitor, is_large_better, topk, load_best_model, fp16,
-                            evaluate_every, device, **kwargs)
+                         monitor, is_large_better, topk, load_best_model, fp16,
+                         evaluate_every, device, **kwargs)
 
     def on_generate_and_check_tag_vocab(self,
                                         data_bundle: DataBundle,
                                         state_dict: Optional[dict]) \
             -> Optional[Vocabulary]:
-        """
-        根据数据集中每个样本 `sample['entity_motions'][i][1]` 生成标签词典。
-        如果加载模型得到的 ``state_dict`` 中存在
-        ``tag_vocab``，则检查是否与根据 ``data_bundle`` 生成的 tag_vocab 一致
-        (优先使用加载得到的 tag_vocab)。
+        """根据数据集中每个样本 `sample['entity_motions'][i][1]` 生成标签词典。 如果加载模型得到的
+        ``state_dict`` 中存在 ``tag_vocab``，则检查是否与根据 ``data_bundle`` 生成的 tag_vocab
+        一致 (优先使用加载得到的 tag_vocab)。
 
         :param data_bundle: 原始数据集，
             可能包含 ``train``、``dev``、``test``、``infer`` 四种，需要分类处理。
@@ -96,4 +89,3 @@ class BaseNERTask(BaseTask, metaclass=abc.ABCMeta):
                            f'conflicts with the dataset label vocabulary, '
                            f'so the model loading may fail. ')
         return tag_vocab
-

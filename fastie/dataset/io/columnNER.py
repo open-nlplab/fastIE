@@ -17,9 +17,7 @@ from fastie.envs import logger
 
 @dataclass
 class ColumnNERConfig(BaseDatasetConfig):
-    """
-    ColumnNER 数据集配置类
-    """
+    """ColumnNER 数据集配置类."""
     folder: str = field(
         default='',
         metadata=dict(help='The folder where the data set resides. \n'
@@ -50,9 +48,8 @@ class ColumnNERConfig(BaseDatasetConfig):
 
 @DATASET.register_module('column-ner')
 class ColumnNER(BaseDataset):
-    """
-    Conll2003 like dataset for FastIE.
-    Each row has a token and its corresponding NER tag.
+    """Conll2003 like dataset for FastIE. Each row has a token and its
+    corresponding NER tag.
 
     :param folder: The folder where the data set resides. ``train.txt``,
         ``dev.txt``, ``test.txt`` and ``infer.txt`` in the folder will be loaded.
@@ -67,6 +64,7 @@ class ColumnNER(BaseDataset):
     """
     _config = ColumnNERConfig()
     _help = 'Conll2003 like dataset for FastIE. Each row has a token and its corresponding NER tag.'
+
     def __init__(self,
                  folder: str = './',
                  token_index: int = 0,
@@ -103,8 +101,8 @@ class ColumnNER(BaseDataset):
                             if len(data) != 0:
                                 if 'infer' in path:
                                     ds.append(
-                                        Instance(tokens=[d['token']
-                                                         for d in data]))
+                                        Instance(
+                                            tokens=[d['token'] for d in data]))
                                 else:
                                     ...
                                 # ds.append(
@@ -122,9 +120,7 @@ class ColumnNER(BaseDataset):
                             })
                 if len(data) != 0:
                     if 'infer' in path:
-                        ds.append(
-                            Instance(tokens=[d['token']
-                                             for d in data]))
+                        ds.append(Instance(tokens=[d['token'] for d in data]))
                     else:
                         ...
                 return ds
