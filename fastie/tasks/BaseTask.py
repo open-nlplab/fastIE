@@ -15,7 +15,6 @@ from fastie.envs import get_flag, logger
 from fastie.node import BaseNode, BaseNodeConfig
 from fastie.utils.hub import Hub
 from fastie.utils.registry import Registry
-from fastie.utils.utils import inspect_metrics
 
 NER = Registry('NER')
 RE = Registry('RE')
@@ -338,6 +337,30 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
             state_dict['tag_vocab'] = tag_vocab.word2idx
         return state_dict
 
+    def _safe_metric_factory(self, result: dict):
+        if self.monitor in result.keys():
+            return result[self.monitor]
+        else:
+            if self.monitor == "":
+                logger.info(f'topk and load_best_model require '
+                            f'monitor to be set. The monitor that '
+                            f'can be selected include '
+                            f"[{','.join(list(result.keys()))}], "
+                            f'so {list(result.keys())[0]} will be set '
+                            f'as monitor')
+                self.monitor = list(result.keys())[0]
+                return result[self.monitor]
+            else:
+                logger.warning(f'topk and load_best_model require '
+                               f'monitor to be set. The monitor '
+                               f'{self.monitor} you set is not in '
+                               f'the optional monitor range: '
+                               f"[{','.join(list(result.keys()))}], "
+                               f'so {list(result.keys())[0]} will be '
+                               f'set to monitor')
+                self.monitor = list(result.keys())[0]
+                return result[self.monitor]
+
     def _run_generator(self):
 
         def run(data_bundle: DataBundle):
@@ -475,29 +498,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                 if self.save_model_folder == '':
                     self.save_model_folder = os.getcwd()
                 # monitor 相关
-                if get_flag() == 'train' \
-                        and (self.topk != 0 or self.load_best_model) \
-                        and isinstance(self._on_setup_metrics_cache, dict) \
-                        and len(self._on_setup_metrics_cache) > 0:
-                    metrics_result = inspect_metrics(parameters_or_data)
-                    if metrics_result:
-                        if self.monitor == '':
-                            logger.info(f'topk and load_best_model require '
-                                        f'monitor to be set. The monitor that '
-                                        f'can be selected include '
-                                        f"[{','.join(metrics_result)}], "
-                                        f'so {metrics_result[0]} will be set '
-                                        f'as monitor')
-                            self.monitor = metrics_result[0]
-                        elif self.monitor not in metrics_result:
-                            logger.warning(f'topk and load_best_model require '
-                                           f'monitor to be set. The monitor '
-                                           f'{self.monitor} you set is not in '
-                                           f'the optional monitor range: '
-                                           f"[{','.join(metrics_result)}], "
-                                           f'so {metrics_result[0]} will be '
-                                           f'set to monitor')
-                        self.monitor = metrics_result[0]
+                self.monitor = '' if self.monitor is None else self.monitor
                 # is_large_better
                 if isinstance(self.is_large_better, str):
                     if self.is_large_better.lower() == 'true':
@@ -510,7 +511,9 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                             f'`False`, but got {self.is_large_better}')
                 # topk 相关
                 if self.topk != 0 \
-                        and self.monitor != '' \
+                        and isinstance(self._on_setup_metrics_cache, dict) \
+                        and len(self._on_setup_metrics_cache) > 0 \
+                        and self.monitor is not None \
                         and get_flag() == 'train':
 
                     def model_save_fn(folder):
@@ -528,7 +531,8 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                         topk=self.topk if self.topk != 0 else -self.topk,
                         larger_better=self.is_large_better,
                         model_save_fn=model_save_fn,
-                        monitor=self.monitor)
+                        monitor=self._safe_metric_factory)
+
                     callback = CheckpointCallback(**callback_parameters)
                     if self._on_setup_callbacks_cache is not None:
                         self._on_setup_callbacks_cache.append(callback)
@@ -540,7 +544,10 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                 if self.load_best_model \
                         and isinstance(self._on_setup_metrics_cache, dict) \
                         and len(self._on_setup_metrics_cache) > 0 \
+                        and self.monitor is not None \
                         and get_flag() == 'train':
+
+
 
                     def model_save_fn(folder):
                         Hub.save(
@@ -557,7 +564,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                         self._on_setup_model_cache = None
 
                     callback = LoadBestModelCallback(
-                        monitor=self.monitor,
+                        monitor=self._safe_metric_factory,
                         model_save_fn=model_save_fn,
                         model_load_fn=model_load_fn,
                         save_folder=os.path.join(self.save_model_folder,
