@@ -11,7 +11,7 @@ fastie.tasks
 
 .. currentmodule:: fastie.tasks
 
-Tasks
+BaseTask
 ----------------
 
 .. autosummary::
@@ -21,5 +21,14 @@ Tasks
 
     BaseTask
     BaseTaskConfig
+
+BertNER
+----------------
+
+.. autosummary::
+    :toctree: generated
+    :nosignatures:
+    :template: classtemplate.rst
+
     BertNER
     BertNERConfig

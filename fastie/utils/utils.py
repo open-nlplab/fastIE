@@ -126,7 +126,7 @@ def check_loaded_tag_vocab(
                         f"`\n[{','.join(list(tag_vocab._word2idx.keys()))}]`\n"  # type: ignore [union-attr]
                         ' loaded from the model is not the same as the '
                         'tag dictionary '
-                        f"\n`[{','.join(list(word2idx.keys()))}]`\n"
+                        f"\n`[{','.join(list(word2idx.keys()))}]`\n"  # type: ignore [union-attr]
                         ' built from the dataset, so the loaded model may be '
                         'discarded')
                     return -1, tag_vocab

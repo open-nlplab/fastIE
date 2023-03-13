@@ -88,7 +88,6 @@ class ColumnNER(BaseDataset):
         node = self
 
         class ColumnNERLoader(Loader):
-
             def _load(self, path: str) -> DataSet:
                 ds = DataSet()
                 data: List[dict] = []

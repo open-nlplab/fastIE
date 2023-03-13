@@ -1,12 +1,12 @@
 ﻿.. role:: hidden
     :class: hidden-section
-.. currentmodule:: fastie.tasks
+.. currentmodule:: fastie.dataset
 
 
-BaseTask
-========
+Conll2003Config
+===============
 
-.. autoclass:: BaseTask
+.. autoclass:: Conll2003Config
     :members:
 
 

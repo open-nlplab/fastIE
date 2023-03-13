@@ -4,7 +4,7 @@ from fastie.controller.BaseController import BaseController, CONTROLLER
 from fastie.envs import set_flag, logger
 from fastie.node import BaseNodeConfig
 
-from fastNLP import DataSet
+from fastNLP import DataSet, auto_param_call
 from fastNLP.io import DataBundle
 from fastNLP import Trainer as FastNLP_Trainer
 
@@ -83,4 +83,4 @@ class Trainer(BaseController):
                 'empty. ')
             exit(1)
         trainer = FastNLP_Trainer(**parameters_or_data)
-        trainer.run()
+        auto_param_call(trainer.run, parameters_or_data)

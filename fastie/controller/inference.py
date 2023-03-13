@@ -6,7 +6,7 @@ from dataclasses import field
 from functools import reduce
 from typing import Union, Sequence, Optional
 
-from fastNLP import Evaluator, DataSet, Metric
+from fastNLP import Evaluator, DataSet, Metric, auto_param_call
 from fastNLP.io import DataBundle
 
 from fastie.controller.BaseController import BaseController, CONTROLLER
@@ -54,7 +54,7 @@ class InferenceMetric(Metric):
                             for i in range(len(sample['tokens']))
                         ]), f"  {sample['entity_mentions'][0][1]} -> "
                         f"{sample['entity_mentions'][0][2]}"
-                        if len(sample['entity_mentions'][0]) == 3 else
+                        if len(sample['entity_mentions'][0]) >= 3 else
                         f"  {sample['entity_mentions'][0][1]}")
                     if len(sample['entity_mentions']) > 1:
                         for entity_mention in sample['entity_mentions'][1:]:
@@ -182,4 +182,4 @@ class Inference(BaseController):
                                            verbose=self.verbose)
         parameters_or_data['metrics'] = {'infer': inference_metric}
         evaluator = Evaluator(**parameters_or_data)
-        return evaluator.run()
+        return auto_param_call(evaluator.run, parameters_or_data)

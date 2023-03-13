@@ -231,11 +231,13 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
             例如:
 
             .. code-block:: python
-            {
-                'train': train_dataloader,
-                'dev1': dev_dataloader,
-                'dev2': dev_dataloader,
-            }
+                {
+                    'train': train_dataloader,
+                    'dev1': dev_dataloader,
+                    'dev2': dev_dataloader,
+                }
+
+
         """
         if get_flag() == 'train':
             if 'dev' in data_bundle.datasets.keys():
@@ -301,7 +303,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
 
             目前我们支持的 ``metric`` 的种类有以下几种：
 
-            1. fastNLP 的 ``metric``：详见 :class:`~fastNLP.core.metrics.
+            1. fastNLP 的 ``metric``：详见 http://www.fastnlp.top/docs/fastNLP/master/api/core.html#metrics.
                Metric`；
             2. torchmetrics；
             3. allennlp.training.metrics；

@@ -26,10 +26,8 @@ def load_dataset(name, *args, **kwargs):
 
 @dataclass
 class BaseDatasetConfig(BaseNodeConfig):
-    """
-    FastIE 数据集基类的配置类.
-    """
-    use_cache: bool = field(
+    """FastIE 数据集基类的配置类."""
+    cache: bool = field(
         default=False,
         metadata=dict(
             help=

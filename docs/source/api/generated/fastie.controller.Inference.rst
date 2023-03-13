@@ -1,12 +1,12 @@
 ﻿.. role:: hidden
     :class: hidden-section
-.. currentmodule:: fastie.tasks
+.. currentmodule:: fastie.controller
 
 
-BaseTask
-========
+Inference
+=========
 
-.. autoclass:: BaseTask
+.. autoclass:: Inference
     :members:
 
 

@@ -1,12 +1,12 @@
 ﻿.. role:: hidden
     :class: hidden-section
-.. currentmodule:: fastie.tasks
+.. currentmodule:: fastie.dataset
 
 
-BaseTask
-========
+ColumnNER
+=========
 
-.. autoclass:: BaseTask
+.. autoclass:: ColumnNER
     :members:
 
 

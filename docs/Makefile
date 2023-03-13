@@ -5,7 +5,7 @@
 SPHINXOPTS    =
 SPHINXAPIDOC  = sphinx-apidoc
 SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = fastNLP
+SPHINXPROJ    = fastie
 # SPHINXEXCLUDE = ../FastIE/transformers/*
 SOURCEDIR     = source
 BUILDDIR      = temp/

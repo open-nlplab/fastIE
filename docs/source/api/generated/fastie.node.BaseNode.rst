@@ -1,12 +1,12 @@
 ﻿.. role:: hidden
     :class: hidden-section
-.. currentmodule:: fastie.tasks
+.. currentmodule:: fastie.node
 
 
-BaseTask
+BaseNode
 ========
 
-.. autoclass:: BaseTask
+.. autoclass:: BaseNode
     :members:
 
 

@@ -1,3 +1,6 @@
+"""
+
+"""
 import sys
 from argparse import ArgumentParser, Namespace, Action
 from dataclasses import dataclass, field
@@ -191,8 +194,8 @@ def main():
         set_flag('infer')
     elif sys.argv[0].endswith('interact'):
         _ = chain + CONTROLLER.get('interactor')()
-        set_flag('interact')
-    elif sys.argv[0].endswith('web'):
+        set_flag('infer')
+    elif sys.argv[0].endswith('server'):
         set_flag('web')
     node = CommandNode()
     _ = node.parser

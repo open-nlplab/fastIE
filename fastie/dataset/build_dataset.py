@@ -20,16 +20,16 @@ def build_dataset(dataset: Optional[Union[str, Sequence[str], dict,
 
     :param dataset: 可以是 ``str`` 或 ``Sequence[str]`` 或 ``dict``
         或 ``Sequence[dict]`` 或 ``DataSet`` 或 ``DataBundle``:
-        * 为 ``str`` 时, 将自动构建 ``Sentence`` 数据集, 该数据集只有一个 ``tokens``
-            字段, 请用空格分割不同的 ``token``.
-        * 为 ``Sequence[str]`` 时, 将自动构建 ``Sentence`` 数据集, 包含多个样本。
-        * 为 ``dict`` 时, 将自动构建 ``DataSet`` 数据集, 键名将被映射到 ``DataSet``
-            的 ``field_name``.
-        * 为 ``Sequence[dict]`` 时, 将自动构建 ``DataSet`` 数据集, 包含多个样本。
-        * 为 ``DataSet`` 时, 将自动构建 ``DataBundle`` 数据集, 并根据当前的 ``flag``
-            自动决定 ``split`` 的名称, 例如 ``train`` ``dev`` ``test`` ``infer`` 。
-        * 为 ``DataBundle`` 时, 直接返回该数据集。
-    :param dataset_config:
+
+            * 为 ``str`` 时, 将自动构建 ``Sentence`` 数据集, 该数据集只有一个 ``tokens`` 字段, 请用空格分割不同的 ``token``；
+            * 为 ``Sequence[str]`` 时, 将自动构建 ``Sentence`` 数据集, 包含多个样本；
+            * 为 ``dict`` 时, 将自动构建 ``DataSet`` 数据集, 键名将被映射到 ``DataSet`` 的 ``field_name``；
+            * 为 ``Sequence[dict]`` 时, 将自动构建 ``DataSet`` 数据集, 包含多个样本；
+            * 为 ``DataSet`` 时, 将自动构建 ``DataBundle`` 数据集, 并根据当前的 ``flag`` 自动决定 ``split`` 的名称, 例如 ``train`` ``dev`` ``test`` ``infer`` ；
+            * 为 ``DataBundle`` 时, 直接返回该数据集；
+            * 为 ``None`` 时, 根据配置文件中的 ``dataset`` 构建数据集.
+
+    :param dataset_config: ``dataset`` 对象的参数
     :return: ``DataBundle`` 数据集
     """
     data_bundle = DataBundle()

@@ -4,7 +4,7 @@ from fastie.controller.BaseController import BaseController, CONTROLLER
 from fastie.envs import set_flag, logger
 from fastie.node import BaseNodeConfig
 
-from fastNLP import DataSet
+from fastNLP import DataSet, auto_param_call
 from fastNLP.io import DataBundle
 from fastNLP import Evaluator as FastNLP_Evaluator
 
@@ -75,4 +75,4 @@ class Evaluator(BaseController):
                 'empty. ')
             exit(1)
         evaluator = FastNLP_Evaluator(**parameters_or_data)
-        return evaluator.run()
+        return auto_param_call(evaluator.run, parameters_or_data)

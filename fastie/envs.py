@@ -44,7 +44,7 @@ FLAG = None
 
 def set_flag(_flag: str = 'train'):
     global FLAG
-    if _flag not in ['train', 'eval', 'infer', 'interact', 'server']:
+    if _flag not in ['train', 'eval', 'infer']:
         _flag = 'train'
     else:
         FLAG = _flag

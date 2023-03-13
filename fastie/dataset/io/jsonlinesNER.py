@@ -35,27 +35,27 @@ class JsonLinesNER(BaseDataset):
     format:
 
     .. code-block:: json
-    {
-        "tokens": ["I", "love", "FastIE", "."],
-        "entity_mentions": [
-            {
-                "entity_index": [2],
-                "entity_type": "MISC"
-            },
-    }
+        {
+            "tokens": ["I", "love", "FastIE", "."],
+            "entity_mentions": [
+                {
+                    "entity_index": [2],
+                    "entity_type": "MISC"
+                },
+        }
 
     or:
 
     .. code-block:: json
-    {
-        "tokens": ["I", "love", "FastIE", "."],
-        "entity_mentions": [
-            {
-                "start": 2,
-                "end": 3,
-                "entity_type": "MISC"
-            },
-    }
+        {
+            "tokens": ["I", "love", "FastIE", "."],
+            "entity_mentions": [
+                {
+                    "start": 2,
+                    "end": 3,
+                    "entity_type": "MISC"
+                },
+        }
 
     :param folder: The folder where the data set resides.
     :param right_inclusive: When data is in the format of start and end,
@@ -80,9 +80,7 @@ class JsonLinesNER(BaseDataset):
         self.right_inclusive = right_inclusive
 
     def run(self) -> DataBundle:
-        vocabulary = Vocabulary()
         node = self
-
         class JsonNERLoader(Loader):
 
             def _load(self, path: str) -> DataSet:
@@ -98,8 +96,6 @@ class JsonLinesNER(BaseDataset):
                                 entity_mentions = []
                                 for entity_mention in sample[
                                         'entity_mentions']:
-                                    vocabulary.add_word(
-                                        entity_mention['entity_type'])
                                     if 'entity_index' in entity_mention.keys():
                                         entity_mentions.append(
                                             (entity_mention['entity_index'],

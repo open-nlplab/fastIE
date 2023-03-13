@@ -1,12 +1,12 @@
 ﻿.. role:: hidden
     :class: hidden-section
-.. currentmodule:: fastie.tasks
+.. currentmodule:: fastie.dataset
 
 
-BaseTask
-========
+WikiannConfig
+=============
 
-.. autoclass:: BaseTask
+.. autoclass:: WikiannConfig
     :members:
 
 
