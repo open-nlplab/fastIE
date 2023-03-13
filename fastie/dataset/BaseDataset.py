@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 from fastNLP import cache_results
 
-from fastie.envs import FASTIE_HOME
+from fastie.envs import FASTIE_HOME, logger
 from fastie.node import BaseNode, BaseNodeConfig
 from fastie.utils import Registry
 
@@ -65,12 +65,24 @@ class BaseDataset(BaseNode, metaclass=abc.ABCMeta):
     def cache(self, value: bool):
         if value:
             # 保存 cache 的位置默认为 `~/.fastie/cache/BaseDataset/cache.pkl`
-            path = os.path.join(FASTIE_HOME,
-                                f'cache/{self.__class__.__name__}/cache.pkl')
-            object.__setattr__(
-                self, 'run',
-                cache_results(_cache_fp=f'{path}',
-                              _refresh=self.refresh_cache)(self.run))
+            original_run = self.run
+            def run_wrapper():
+                cache_name = "cache"
+                if "io" in self.__class__.__module__:
+                    if hasattr(self, "folder"):
+                        if not self.folder.endswith("/"):
+                            self.folder += "/"
+                        cache_name = os.path.basename(os.path.dirname(self.folder))
+                    else:
+                        logger.warn(f"""
+                        Please make sure that your IO Dataset class has a ``folder`` attribute. 
+                        Otherwise, your dataset will be cached into the same cache file, whether or not you use the same folder the next time.
+                        """)
+                path = os.path.join(FASTIE_HOME,
+                                f'cache/{self.__class__.__name__}/{cache_name}.pkl')
+                return cache_results(_cache_fp=f'{path}',
+                              _refresh=self.refresh_cache)(original_run)()
+            object.__setattr__(self, 'run', run_wrapper)
         self._cache = value
 
     @abc.abstractmethod
