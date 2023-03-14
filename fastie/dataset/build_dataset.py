@@ -55,6 +55,8 @@ def build_dataset(dataset: Optional[Union[str, Sequence[str], dict,
                 data_bundle = DataBundle(datasets={'train': dataset})
             elif get_flag() == 'eval':
                 data_bundle = DataBundle(datasets={'test': dataset})
-            elif get_flag() == 'infer' or get_flag() == 'interact':
+            elif get_flag() == 'infer':
                 data_bundle = DataBundle(datasets={'infer': dataset})
+            else:
+                data_bundle = DataBundle(datasets={'train': dataset})
     return data_bundle

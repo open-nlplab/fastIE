@@ -65,10 +65,10 @@ class BaseController(BaseNode):
             * 验证时, 返回验证集的 ``metric``
             * 推理时, 返回推理结果
         """
-        if isinstance(parameters_or_data, Generator):
-            parameters_or_data = next(parameters_or_data)
         if callable(parameters_or_data):
             parameters_or_data = parameters_or_data()
+        if isinstance(parameters_or_data, Generator):
+            parameters_or_data = next(parameters_or_data)
         if isinstance(parameters_or_data, dict) \
                 and 'model' in parameters_or_data.keys():
             return parameters_or_data

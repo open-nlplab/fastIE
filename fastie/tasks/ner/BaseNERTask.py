@@ -83,7 +83,7 @@ class BaseNERTask(BaseTask, metaclass=abc.ABCMeta):
         if state_dict is not None and 'tag_vocab' in state_dict:
             tag_vocab = state_dict['tag_vocab']
         signal, tag_vocab = check_loaded_tag_vocab(
-            tag_vocab, generate_tag_vocab(data_bundle))
+            tag_vocab, generate_tag_vocab(data_bundle)["entity"])
         if signal == -1:
             logger.warning(f'It is detected that the model label vocabulary '
                            f'conflicts with the dataset label vocabulary, '

@@ -1,11 +1,11 @@
 """Base class for all FastIE tasks."""
 
-__all__ = ['BaseTask', 'BaseTaskConfig', 'NER', 'RE', 'EE']
+__all__ = ['BaseTask', 'BaseTaskConfig', 'NER', 'RE', 'EE', 'TaskSequential']
 
 import abc
 import os.path
 from dataclasses import dataclass, field
-from typing import Sequence, Union, Generator, Optional, Any
+from typing import Sequence, Union, Generator, Optional, Any, Type
 
 from fastNLP import Vocabulary, Callback, prepare_dataloader
 from fastNLP.core.callbacks import CheckpointCallback, LoadBestModelCallback
@@ -113,6 +113,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
     """
     _config = BaseTaskConfig()
     _help = 'Base class for all tasks. '
+    _will_refresh = False
 
     def __init__(self,
                  load_model: str = '',
@@ -152,6 +153,8 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
         self._on_setup_metrics_cache: Any = None
         self._on_setup_extra_fastnlp_parameters_cache: Any = None
         self._on_get_state_dict_cache: Any = None
+
+        self._controller_cache: dict = {}
 
     @abc.abstractmethod
     def on_generate_and_check_tag_vocab(self,
@@ -367,7 +370,8 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
             self.refresh_cache()
 
             def run_warp(data_bundle: DataBundle):
-                parameters_or_data: dict = {}
+                # 方便后续交互
+                parameters_or_data: dict = {"fastie_task": self}
 
                 if self.load_model != '':
                     self._on_get_state_dict_cache = Hub.load(self.load_model)
@@ -416,7 +420,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                         'The model you are using does not have a '
                         '`inference_step` method, which is required for '
                         'infering.')
-                    if get_flag() == 'infer' or get_flag() == 'interact':
+                    if get_flag() == 'infer':
                         raise RuntimeError(
                             'The model you are using does not '
                             'have a `inference_step` method, which '
@@ -546,9 +550,6 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                         and len(self._on_setup_metrics_cache) > 0 \
                         and self.monitor is not None \
                         and get_flag() == 'train':
-
-
-
                     def model_save_fn(folder):
                         Hub.save(
                             os.path.join(folder, 'model.bin'),
@@ -561,7 +562,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                     def model_load_fn(folder):
                         self._on_get_state_dict_cache = Hub.load(
                             os.path.join(folder, 'model.bin'))
-                        self._on_setup_model_cache = None
+                        self._will_refresh = True
 
                     callback = LoadBestModelCallback(
                         monitor=self._safe_metric_factory,
@@ -588,14 +589,17 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                 # 为 infer 的情景修改执行函数
                 if get_flag() == 'infer':
                     parameters_or_data['evaluate_fn'] = 'inference_step'
+
                 return parameters_or_data
 
             if get_flag() is None:
                 raise ValueError('You should set the flag first.')
             else:
                 while True:
+                    if self._will_refresh:
+                        self.refresh_cache()
+                        self._will_refresh = False
                     yield run_warp(data_bundle)
-
         return run
 
     def refresh_cache(self):
@@ -608,7 +612,11 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
         self._on_get_state_dict_cache = None
 
     def run(self, data_bundle: DataBundle):
-        raise NotImplementedError
+        """
+        无需实现该方法.
+        :param data_bundle: 包含 ``train``, ``dev``, ``test`` 或 ``infer`` 的数据集
+        :return:
+        """
 
     def __call__(self, *args, **kwargs):
         if isinstance(self.run, Generator):

@@ -69,10 +69,9 @@ class Evaluator(BaseController):
             >>> {'acc': 0.0, 'f1': 0.0, 'precision': 0.0, 'recall': 0.0}
         """
         parameters_or_data = BaseController.run(self, parameters_or_data)
+        task = parameters_or_data.pop('fastie_task')
         if parameters_or_data is None:
-            logger.error(
-                'Evaluating tool do not allow task and dataset to be left '
+            raise Exception('Evaluating tool do not allow task or dataset to be left '
                 'empty. ')
-            exit(1)
         evaluator = FastNLP_Evaluator(**parameters_or_data)
         return auto_param_call(evaluator.run, parameters_or_data)

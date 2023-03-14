@@ -3,6 +3,7 @@ __all__ = ['Trainer', 'TrainerConfig']
 from fastie.controller.BaseController import BaseController, CONTROLLER
 from fastie.envs import set_flag, logger
 from fastie.node import BaseNodeConfig
+from fastie.tasks.BaseTask import BaseTask
 
 from fastNLP import DataSet, auto_param_call
 from fastNLP.io import DataBundle
@@ -82,5 +83,15 @@ class Trainer(BaseController):
                 'Training tool do not allow task and dataset to be left '
                 'empty. ')
             exit(1)
+
+        task: BaseTask = parameters_or_data.pop('fastie_task')
         trainer = FastNLP_Trainer(**parameters_or_data)
         auto_param_call(trainer.run, parameters_or_data)
+        if task is not None:
+            task._on_get_state_dict_cache = task.on_get_state_dict(
+                model=task._on_setup_model_cache,
+                data_bundle=task._on_setup_data_bundle_cache,
+                tag_vocab=task._on_setup_tag_vocab_cache)
+            return task._on_get_state_dict_cache
+        else:
+            return None

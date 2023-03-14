@@ -54,6 +54,7 @@ class Interactor(BaseController):
             parameters_or_data: Optional[Union[dict, DataBundle, DataSet, str,
                                                Sequence[str]]] = None):
         parameters_or_data = BaseController.run(self, parameters_or_data)
+        task = parameters_or_data.pop('fastie_task')
         if parameters_or_data is None:
             logger.error(
                 'Interacting tool do not allow task and dataset to be left '
