@@ -2,7 +2,7 @@
 recognition."""
 __all__ = ['Conll2003', 'Conll2003Config']
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 from datasets import load_dataset

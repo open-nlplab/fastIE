@@ -1,8 +1,8 @@
 from .BaseController import BaseController, CONTROLLER
-from .trainer import Trainer, TrainerConfig
-from .inference import Inference, InferenceConfig
 from .evaluator import Evaluator, EvaluatorConfig
+from .inference import Inference, InferenceConfig
 from .interactor import Interactor, InteractorConfig
+from .trainer import Trainer, TrainerConfig
 
 __all__ = [
     'BaseController', 'CONTROLLER', 'Trainer', 'TrainerConfig', 'Inference',

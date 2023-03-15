@@ -2,17 +2,17 @@
 
 __all__ = ['BaseController', 'CONTROLLER']
 
-from fastie.node import BaseNode, BaseNodeConfig
-from fastie.utils import Registry, parse_config
-from fastie.tasks import build_task
-from fastie.dataset.build_dataset import build_dataset
+from typing import Union, Sequence, Generator, Optional
 
 from fastNLP import DataSet
 from fastNLP.io import DataBundle
 
-from typing import Union, Sequence, Generator, Optional
+from fastie.dataset.build_dataset import build_dataset
+from fastie.node import BaseNode
+from fastie.tasks import build_task
+from fastie.utils import Registry
 
-CONTROLLER = Registry('CONTROLLER')
+CONTROLLER: Registry = Registry('CONTROLLER')
 
 
 class BaseController(BaseNode):

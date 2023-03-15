@@ -1,5 +1,6 @@
 """Inference tool for FastIE."""
 __all__ = ['Inference', 'InferenceConfig', 'InferenceMetric']
+
 import json
 from dataclasses import dataclass
 from dataclasses import field
@@ -99,11 +100,9 @@ class InferenceConfig(BaseNodeConfig):
             existence=['infer']))
     verbose: bool = field(
         default=True,
-        metadata=dict(
-            help=
-            'Whether to output the contents of each inference. Multiple cards '
-            'are not supported. ',
-            existence=['infer']))
+        metadata=dict(help='Whether to output the contents of each inference. '
+                      'Multiple cards are not supported. ',
+                      existence=['infer']))
 
 
 @CONTROLLER.register_module('inference')
@@ -133,9 +132,11 @@ class Inference(BaseController):
         self.verbose: bool = verbose
         set_flag('infer')
 
-    def run(self,
-            parameters_or_data: Optional[Union[dict, DataBundle, DataSet, str,\
-                    Sequence[str]]] = None) -> Sequence[dict]:
+    def run(
+        self,
+        parameters_or_data: Optional[Union[dict, DataBundle, DataSet, str,
+                                           Sequence[str]]] = None
+    ) -> Sequence[dict]:
         """验证器的 ``run`` 方法，用于实际地对传入的 ``task`` 或是数据集进行推理.
 
         :param parameters_or_data: 既可以是 task，也可以是数据集:
@@ -171,7 +172,6 @@ class Inference(BaseController):
                 >>>   'entity_motions': [([4], "LOC")]}]
         """
         parameters_or_data = BaseController.run(self, parameters_or_data)
-        task = parameters_or_data.pop('fastie_task')
         if parameters_or_data is None:
             logger.error(
                 'Inference tool do not allow task and dataset to be left '

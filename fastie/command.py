@@ -1,19 +1,17 @@
-"""
-
-"""
+""""""
 import sys
 from argparse import ArgumentParser, Namespace, Action
 from dataclasses import dataclass, field
 from typing import Sequence, Optional
 
-from fastie.controller import CONTROLLER, Interactor
-from fastie.dataset import DATASET
-from fastie.envs import set_flag, FASTIE_HOME, parser, logger
-from fastie.exhibition import Exhibition
-from fastie.tasks import NER, EE, RE
-from fastie.utils import Config, parse_config
-from fastie.node import BaseNodeConfig, BaseNode
 from fastie.chain import Chain
+from fastie.controller import CONTROLLER
+from fastie.dataset import DATASET
+from fastie.envs import set_flag, parser, logger
+from fastie.exhibition import Exhibition
+from fastie.node import BaseNodeConfig, BaseNode
+from fastie.tasks import NER, EE, RE
+from fastie.utils import parse_config
 
 chain = Chain([])
 
@@ -29,9 +27,8 @@ class CommandNodeConfig(BaseNodeConfig):
     task: str = field(
         default='',
         metadata=dict(
-            help=
-            'The task you want to use. Please use / to split the task and the '
-            'specific solution.',
+            help='The task you want to use. Please use / to split the task and '
+            'the specific solution.',
             existence=True,
             alias='-t'))
     dataset: str = field(default='',

@@ -1,11 +1,14 @@
 """FastIE 全局变量."""
 __all__ = [
     'get_task', 'set_task', 'get_dataset', 'set_dataset', 'get_flag',
-    'set_flag'
+    'set_flag', 'logger'
 ]
+
 import os
 from argparse import ArgumentParser
-from fastNLP import logger
+from fastNLP import logger as fastnlp_logger
+
+logger = fastnlp_logger
 
 parser: ArgumentParser = ArgumentParser(prog='fastie-train',
                                         conflict_handler='resolve')

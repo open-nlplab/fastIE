@@ -2,8 +2,7 @@ from .chain import Chain
 from .controller import CONTROLLER, Trainer, TrainerConfig, Evaluator, \
     EvaluatorConfig, Inference, InferenceConfig, Interactor, InteractorConfig
 from .dataset import DATASET, BaseDataset, BaseDatasetConfig
-from .envs import get_flag, set_flag, parser, logger, get_task, get_dataset, \
-    set_task, set_dataset
+from .envs import get_flag, set_flag, parser, get_task, logger
 from .node import BaseNode, BaseNodeConfig
 from .tasks import NER, EE, RE, BaseTask, BaseTaskConfig
 from .utils import Registry, Config, Hub, parse_config, generate_tag_vocab, \

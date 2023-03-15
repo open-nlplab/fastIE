@@ -5,14 +5,12 @@ __all__ = ['ColumnNER', 'ColumnNERConfig']
 import os
 from dataclasses import dataclass, field
 from functools import reduce
-from typing import Union, Sequence, Optional, List
+from typing import Union, Sequence, List
 
-from fastNLP import DataSet, Instance, Vocabulary
-
+from fastNLP import DataSet, Instance
 from fastNLP.io import Loader, DataBundle
 
 from fastie.dataset.BaseDataset import DATASET, BaseDatasetConfig, BaseDataset
-from fastie.envs import logger
 
 
 @dataclass
@@ -32,18 +30,14 @@ class ColumnNERConfig(BaseDatasetConfig):
                                          existence=['train', 'eval']))
     split_char: str = field(
         default=' ',
-        metadata=dict(
-            help=
-            'The split char. If this parameter is not set, it is separated by '
-            'space. ',
-            existence=True))
+        metadata=dict(help='The split char. If this parameter is not set, '
+                      'it is separated by space. ',
+                      existence=True))
     skip_content: str = field(
         default=' ',
-        metadata=dict(
-            help=
-            'The content to skip. If this item is not set, it is divided by '
-            'newline character. ',
-            existence=True))
+        metadata=dict(help='The content to skip. If this item is not set, '
+                      'it is divided by newline character. ',
+                      existence=True))
 
 
 @DATASET.register_module('column-ner')
@@ -88,6 +82,7 @@ class ColumnNER(BaseDataset):
         node = self
 
         class ColumnNERLoader(Loader):
+
             def _load(self, path: str) -> DataSet:
                 ds = DataSet()
                 data: List[dict] = []

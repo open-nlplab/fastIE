@@ -123,7 +123,7 @@ class BaseNode(object):
             if PARSER_FLAG == 'dataclass':
                 for key, value in self._config.to_dict().items():
                     if isinstance(value['metadata']['existence'], bool) \
-                            and value['metadata']['existence'] == True \
+                            and value['metadata']['existence'] \
                             or isinstance(value['metadata']['existence'], list) \
                             and get_flag() in value['metadata']['existence'] \
                             or isinstance(value['metadata']['existence'], str) \
@@ -176,8 +176,8 @@ class BaseNode(object):
                             f'--{key}',
                             default=value['value'],
                             type=type(value['value']),
-                            help=
-                            f"{value['description']} 默认值为: {value['value']}",
+                            help=f"{value['description']} "
+                            f"默认值为: {value['value']}",
                             action=self.action,
                             metavar='',
                             required=False)

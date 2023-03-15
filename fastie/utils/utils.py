@@ -14,7 +14,7 @@ from fastie.utils.config import Config
 def generate_tag_vocab(
         data_bundle: DataBundle,
         unknown: Optional[str] = 'O',
-        base_mapping: Optional[dict] = None) -> Optional[Dict[str, Vocabulary]]:
+        base_mapping: Optional[dict] = None) -> Dict[str, Vocabulary]:
     """根据数据集中的已标注样本构建 tag_vocab.
 
     :param data_bundle: :class:`~fastNLP.io.DataBundle` 对象
@@ -22,24 +22,25 @@ def generate_tag_vocab(
     :param base_mapping: 基础映射，例如 ``{"entity": {"label": 0}}`` 或者 ``{"entity": {0: "label"}}``
         函数将在确保 ``base_mapping`` 中的标签不会被覆盖改变的前提下构造 vocab
     :return: 如果存在已标注样本，则返回构造成功的 :class:`~fastNLP.Vocabulary` 的 `dict` 对象，
-        其中 `key` 为 `vocab` 类别. 否则返回空的 ``None``
+        其中 `value` 为 `vocab` 类别. 否则返回空的 ``dict``
     """
     if 'train' in data_bundle.datasets.keys() \
             or 'dev' in data_bundle.datasets.keys() \
             or 'test' in data_bundle.datasets.keys():
-        vocab = {}
+        vocab: Dict = {}
 
         def construct_vocab(instance: Instance):
             # 当然，用来 infer 的数据集是无法构建的，这里判断一下
             if 'entity_mentions' in instance.keys():
-                if "entity" not in vocab.keys():
-                    vocab["entity"] = Vocabulary(padding=None, unknown=unknown)
+                if 'entity' not in vocab.keys():
+                    vocab['entity'] = Vocabulary(padding=None, unknown=unknown)
                 for entity_mention in instance['entity_mentions']:
-                    vocab["entity"].add(entity_mention[1])
+                    vocab['entity'].add(entity_mention[1])
             else:
                 # TODO: 增加新的标签种类
                 ...
             return instance
+
         data_bundle.apply_more(construct_vocab)
         for key, value in vocab.items():
             if base_mapping and key in base_mapping.keys():
@@ -67,7 +68,7 @@ def generate_tag_vocab(
         return vocab
     else:
         # 无以标注样本
-        return None
+        return {}
 
 
 def check_loaded_tag_vocab(
@@ -209,11 +210,9 @@ def inspect_function_calling(func_name: str) -> Optional[Set[str]]:
                                 break
                     if 'args' in frame_info_list[k].frame.f_locals.keys():
                         argument_list = \
-                            frame_info_list[k + 1].\
-                        frame.f_locals[func_name].__code__.co_varnames
-                        argument_user_provided.\
-                            extend(argument_list[:len(
-                            frame_info_list[k].frame.f_locals['args'])])
+                            frame_info_list[k + 1].frame.f_locals[func_name].__code__.co_varnames
+                        argument_user_provided. \
+                            extend(argument_list[:len(frame_info_list[k].frame.f_locals['args'])])
                     # 转换为 set 去除重复项
                     return set(argument_user_provided)
     return None
@@ -242,24 +241,3 @@ def inspect_metrics(parameters: dict = {}) -> List[str]:
     except Exception as e:
         logger.error(e)
         return []
-
-
-vocab = {
-    "id": {
-        "O": 0,
-        "PER": 1,
-        "ORG": 2,
-        "MISC": 3,
-    },
-    "entity": [
-        0,
-        1,
-        2,
-        3
-    ],
-    "relation": [
-        4,
-        5,
-        6,
-    ]
-}

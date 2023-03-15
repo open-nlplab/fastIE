@@ -1,16 +1,16 @@
 """Evaluator for FastIE."""
 __all__ = ['Evaluator', 'EvaluatorConfig']
-from fastie.controller.BaseController import BaseController, CONTROLLER
-from fastie.envs import set_flag, logger
-from fastie.node import BaseNodeConfig
-
-from fastNLP import DataSet, auto_param_call
-from fastNLP.io import DataBundle
-from fastNLP import Evaluator as FastNLP_Evaluator
-
-from typing import Union, Sequence, Optional
 
 from dataclasses import dataclass
+from typing import Union, Optional
+
+from fastNLP import DataSet, auto_param_call
+from fastNLP import Evaluator as FastNLP_Evaluator
+from fastNLP.io import DataBundle
+
+from fastie.controller.BaseController import BaseController, CONTROLLER
+from fastie.envs import set_flag
+from fastie.node import BaseNodeConfig
 
 
 @dataclass
@@ -69,9 +69,9 @@ class Evaluator(BaseController):
             >>> {'acc': 0.0, 'f1': 0.0, 'precision': 0.0, 'recall': 0.0}
         """
         parameters_or_data = BaseController.run(self, parameters_or_data)
-        task = parameters_or_data.pop('fastie_task')
         if parameters_or_data is None:
-            raise Exception('Evaluating tool do not allow task or dataset to be left '
+            raise Exception(
+                'Evaluating tool do not allow task or dataset to be left '
                 'empty. ')
         evaluator = FastNLP_Evaluator(**parameters_or_data)
         return auto_param_call(evaluator.run, parameters_or_data)

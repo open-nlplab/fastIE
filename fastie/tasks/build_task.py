@@ -1,12 +1,11 @@
 """This module is used to build the task from config."""
 __all__ = ['build_task']
-from fastie.tasks import NER, RE, EE
-from fastie.envs import get_task
-from fastie.utils.utils import parse_config
 
 from typing import Union, Optional
 
-from copy import deepcopy
+from fastie.envs import get_task
+from fastie.tasks import NER, RE, EE
+from fastie.utils.utils import parse_config
 
 
 def build_task(_config: Optional[Union[dict, str]] = None):

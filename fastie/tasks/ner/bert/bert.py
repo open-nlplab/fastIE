@@ -3,7 +3,7 @@ __all__ = ['BertNER', 'BertNERConfig']
 
 from dataclasses import dataclass, field
 from functools import reduce
-from typing import Union, Sequence, Optional
+from typing import Optional, Dict
 
 import numpy as np
 import torch
@@ -79,8 +79,8 @@ class Model(nn.Module):
                 features[b][offset_mask[b].nonzero(), :].squeeze(1), dim=1)
             pred = logits.argmax(dim=1).to(features.device)
             target = torch.zeros(pred.shape[0]).to(features.device)
-            if pred.shape[0] > max_len: \
-                    max_len = pred.shape[0]
+            if pred.shape[0] > max_len:
+                max_len = pred.shape[0]
             for entity_mention in entity_mentions[b]:
                 for i in entity_mention[0]:
                     target[i] = entity_mention[1]
@@ -147,44 +147,19 @@ class BertNER(BaseNERTask):
     # 帮助信息，会显示在命令行分组的帮助信息中
     _help = 'Use pre-trained BERT and a classification head to classify tokens'
 
-    def __init__(
-            self,
-            pretrained_model_name_or_path: str = 'bert-base-uncased',
-            lr: float = 2e-5,
-
-            # 以下是父类的参数，也要复制过来，可以查看一下 BaseTask 参数
-            load_model: str = '',
-            save_model_folder: str = '',
-            batch_size: int = 32,
-            epochs: int = 20,
-            monitor: str = '',
-            is_large_better: bool = True,
-            topk: int = 0,
-            load_best_model: bool = False,
-            fp16: bool = False,
-            evaluate_every: int = -1,
-            device: Union[int, Sequence[int], str] = 'cpu',
-            **kwargs):
+    def __init__(self,
+                 pretrained_model_name_or_path: str = 'bert-base-uncased',
+                 lr: float = 2e-5,
+                 **kwargs):
         # 必须要把父类 （BaseTask）的参数也复制过来，否则用户没有父类的代码提示；
         # 在这里进行父类的初始化；
         # 父类的参数我们不需要进行任何操作，比如这里的 cuda 和 load_model，我们无视就可以了。
-        super().__init__(load_model=load_model,
-                         save_model_folder=save_model_folder,
-                         batch_size=batch_size,
-                         epochs=epochs,
-                         monitor=monitor,
-                         is_large_better=is_large_better,
-                         topk=topk,
-                         load_best_model=load_best_model,
-                         fp16=fp16,
-                         evaluate_every=evaluate_every,
-                         device=device,
-                         **kwargs)
+        super().__init__(**kwargs)
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.lr = lr
 
     def on_dataset_preprocess(self, data_bundle: DataBundle,
-                              tag_vocab: Vocabulary,
+                              tag_vocab: Dict[str, Vocabulary],
                               state_dict: Optional[dict]) -> DataBundle:
         """数据预处理, 包括将 `label` 通过生成或加载的 `tag_vocab` 转化为 id, 并将 `tokens` 通过
         `BertTokenizer` 转化为 id.
@@ -229,14 +204,16 @@ class BertNER(BaseNERTask):
                 for i in range(len(instance['entity_mentions'])):
                     instance['entity_mentions'][i] = (
                         instance['entity_mentions'][i][0],
-                        tag_vocab.to_index(instance['entity_mentions'][i][1]))
+                        tag_vocab['entity'].to_index(
+                            instance['entity_mentions'][i][1]))
                 result_dict['entity_mentions'] = instance['entity_mentions']
             return result_dict
 
         data_bundle.apply_more(tokenize)
         return data_bundle
 
-    def on_setup_model(self, data_bundle: DataBundle, tag_vocab: Vocabulary,
+    def on_setup_model(self, data_bundle: DataBundle,
+                       tag_vocab: Dict[str, Vocabulary],
                        state_dict: Optional[dict]):
         """加载 BERT 模型和分类头.
 
@@ -248,14 +225,16 @@ class BertNER(BaseNERTask):
         """
         # 模型加载阶段
         model = Model(self.pretrained_model_name_or_path,
-                      num_labels=len(list(tag_vocab.word2idx.keys())),
-                      tag_vocab=tag_vocab)
+                      num_labels=len(list(
+                          tag_vocab['entity'].word2idx.keys())),
+                      tag_vocab=tag_vocab['entity'])
         if state_dict:
             model.load_state_dict(state_dict['model'])
         return model
 
     def on_setup_optimizers(self, model, data_bundle: DataBundle,
-                            tag_vocab: Vocabulary, state_dict: Optional[dict]):
+                            tag_vocab: Dict[str, Vocabulary],
+                            state_dict: Optional[dict]):
         """加载 `Adam` 优化器.
 
         :param model: 模型
@@ -268,7 +247,7 @@ class BertNER(BaseNERTask):
         return torch.optim.Adam(model.parameters(), lr=self.lr)
 
     def on_setup_metrics(self, model, data_bundle: DataBundle,
-                         tag_vocab: Vocabulary,
+                         tag_vocab: Dict[str, Vocabulary],
                          state_dict: Optional[dict]) -> dict:
         """加载 `Accuracy` 评价指标.
 

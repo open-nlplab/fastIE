@@ -1,17 +1,17 @@
 """Trainer for FastIE."""
 __all__ = ['Trainer', 'TrainerConfig']
+
+from dataclasses import dataclass
+from typing import Union, Sequence, Optional
+
+from fastNLP import DataSet, auto_param_call
+from fastNLP import Trainer as FastNLP_Trainer
+from fastNLP.io import DataBundle
+
 from fastie.controller.BaseController import BaseController, CONTROLLER
 from fastie.envs import set_flag, logger
 from fastie.node import BaseNodeConfig
 from fastie.tasks.BaseTask import BaseTask
-
-from fastNLP import DataSet, auto_param_call
-from fastNLP.io import DataBundle
-from fastNLP import Trainer as FastNLP_Trainer
-
-from typing import Union, Sequence, Optional
-
-from dataclasses import dataclass, field
 
 
 @dataclass
@@ -90,8 +90,8 @@ class Trainer(BaseController):
         if task is not None:
             task._on_get_state_dict_cache = task.on_get_state_dict(
                 model=task._on_setup_model_cache,
-                data_bundle=task._on_setup_data_bundle_cache,
-                tag_vocab=task._on_setup_tag_vocab_cache)
+                data_bundle=task._on_dataset_preprocess_cache,
+                tag_vocab=task._on_generate_and_check_tag_vocab_cache)
             return task._on_get_state_dict_cache
         else:
             return None

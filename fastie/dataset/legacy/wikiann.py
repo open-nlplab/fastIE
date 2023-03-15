@@ -2,13 +2,13 @@
 Wikiann dataset for FastIE. .
 """
 __all__ = ['Wikiann', 'WikiannConfig']
+
 from dataclasses import dataclass, field
 
+import numpy as np
 from datasets import load_dataset
 from fastNLP import DataSet, Instance
 from fastNLP.io import DataBundle
-
-import numpy as np
 
 from fastie.dataset.BaseDataset import DATASET, BaseDataset, BaseDatasetConfig
 

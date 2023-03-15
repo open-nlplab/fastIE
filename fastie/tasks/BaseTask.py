@@ -1,11 +1,11 @@
 """Base class for all FastIE tasks."""
 
-__all__ = ['BaseTask', 'BaseTaskConfig', 'NER', 'RE', 'EE', 'TaskSequential']
+__all__ = ['BaseTask', 'BaseTaskConfig', 'NER', 'RE', 'EE']
 
 import abc
 import os.path
 from dataclasses import dataclass, field
-from typing import Sequence, Union, Generator, Optional, Any, Type
+from typing import Sequence, Union, Generator, Optional, Any, Dict
 
 from fastNLP import Vocabulary, Callback, prepare_dataloader
 from fastNLP.core.callbacks import CheckpointCallback, LoadBestModelCallback
@@ -16,9 +16,9 @@ from fastie.node import BaseNode, BaseNodeConfig
 from fastie.utils.hub import Hub
 from fastie.utils.registry import Registry
 
-NER = Registry('NER')
-RE = Registry('RE')
-EE = Registry('EE')
+NER: Registry = Registry('NER')
+RE: Registry = Registry('RE')
+EE: Registry = Registry('EE')
 
 
 @dataclass
@@ -30,9 +30,9 @@ class BaseTaskConfig(BaseNodeConfig, metaclass=abc.ABCMeta):
     save_model_folder: str = field(
         default='',
         metadata=dict(
-            help=
-            'The folder to save the model when using `topk` or `load_best_model`. '
-            'If not set, all models will be saved in the current directory.',
+            help='The folder to save the model when using `topk` or '
+            '`load_best_model`. If not set, all models will be saved '
+            'in the current directory.',
             existence='train'))
     batch_size: int = field(default=32,
                             metadata=dict(help='Batch size. ', existence=True))
@@ -67,8 +67,8 @@ class BaseTaskConfig(BaseNodeConfig, metaclass=abc.ABCMeta):
     load_best_model: bool = field(
         default=False,
         metadata=dict(
-            help=
-            'Save the best model to `save_model_folder`/fastie_best_model according to the `monitor`. ',
+            help='Save the best model to `save_model_folder`/fastie_best_model '
+            'according to the `monitor`. ',
             existence='train'))
 
     fp16: bool = field(default=False,
@@ -78,8 +78,8 @@ class BaseTaskConfig(BaseNodeConfig, metaclass=abc.ABCMeta):
     device: str = field(
         default='cpu',
         metadata=dict(
-            help=
-            'Specifies the devices to use. If you want to use multiple GPUs, connect the GPU id with a `,`',
+            help='Specifies the devices to use. If you want to use multiple '
+            'GPUs, connect the GPU id with a `,`',
             existence=True))
 
 
@@ -160,7 +160,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
     def on_generate_and_check_tag_vocab(self,
                                         data_bundle: DataBundle,
                                         state_dict: Optional[dict]) \
-            -> Optional[Vocabulary]:
+            -> Dict[str, Vocabulary]:
         """根据数据集中的已标注数据的标签词频生成标签词典。 如果加载模型得到的 ``state_dict`` 中存在
         ``tag_vocab``，则检查是否与根据 ``data_bundle`` 生成的 tag_vocab 一致 (优先使用加载得到的
         tag_vocab)。
@@ -175,7 +175,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def on_dataset_preprocess(self, data_bundle: DataBundle,
-                              tag_vocab: Optional[Vocabulary],
+                              tag_vocab: Dict[str, Vocabulary],
                               state_dict: Optional[dict]) -> DataBundle:
         """数据预处理，包括数据索引化和标签索引化。必须重写.
 
@@ -190,7 +190,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def on_setup_model(self, data_bundle: DataBundle,
-                       tag_vocab: Optional[Vocabulary],
+                       tag_vocab: Dict[str, Vocabulary],
                        state_dict: Optional[dict]):
         """模型构建，包括模型的初始化和加载。必须重写.
 
@@ -205,7 +205,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def on_setup_optimizers(self, model, data_bundle: DataBundle,
-                            tag_vocab: Optional[Vocabulary],
+                            tag_vocab: Dict[str, Vocabulary],
                             state_dict: Optional[dict]):
         """优化器构建，包括优化器的初始化和加载。必须重写.
 
@@ -219,7 +219,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
             'Optimizer setup method must be implemented. ')
 
     def on_setup_dataloader(self, model, data_bundle: DataBundle,
-                            tag_vocab: Optional[Vocabulary],
+                            tag_vocab: Dict[str, Vocabulary],
                             state_dict: Optional[dict]) -> dict:
         """数据加载器构建，包括数据加载器的初始化和加载。不需要重写.
 
@@ -238,8 +238,6 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                     'dev1': dev_dataloader,
                     'dev2': dev_dataloader,
                 }
-
-
         """
         if get_flag() == 'train':
             if 'dev' in data_bundle.datasets.keys():
@@ -278,7 +276,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
 
     def on_setup_callbacks(self, model,
                            data_bundle: DataBundle,
-                           tag_vocab: Optional[Vocabulary],
+                           tag_vocab: Dict[str, Vocabulary],
                            state_dict: Optional[dict]) \
             -> Union[Callback, Sequence[Callback]]:
         """FastNLP 回调参数构建，包括回调对象的初始化和加载。默认为空。
@@ -292,7 +290,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
         return []
 
     def on_setup_metrics(self, model, data_bundle: DataBundle,
-                         tag_vocab: Optional[Vocabulary],
+                         tag_vocab: Dict[str, Vocabulary],
                          state_dict: Optional[dict]) -> dict:
         """FastNLP 评价指标构建，包括评价指标对象的初始化和加载。默认为空。
 
@@ -314,7 +312,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
         return {}
 
     def on_setup_extra_fastnlp_parameters(self, model, data_bundle: DataBundle,
-                                          tag_vocab: Optional[Vocabulary],
+                                          tag_vocab: Dict[str, Vocabulary],
                                           state_dict: Optional[dict]) -> dict:
         """其他 FastNLP 的可用参数.
 
@@ -327,7 +325,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
         return {}
 
     def on_get_state_dict(self, model, data_bundle: DataBundle,
-                          tag_vocab: Optional[Vocabulary]) -> dict:
+                          tag_vocab: Dict[str, Vocabulary]) -> dict:
         """获取 ``state_dict`` 用来保存，和其他方法参数中的 ``state_dict`` 一致。
 
         :param model: 初始化和加载后的模型
@@ -336,15 +334,16 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
         :return: 最新的 ``state_dict``
         """
         state_dict = {'model': model.state_dict()}
-        if tag_vocab is not None:
-            state_dict['tag_vocab'] = tag_vocab.word2idx
+        state_dict['tag_vocab'] = {}
+        for key, vocab in tag_vocab.items():
+            state_dict['tag_vocab'][key] = vocab.word2idx
         return state_dict
 
     def _safe_metric_factory(self, result: dict):
         if self.monitor in result.keys():
             return result[self.monitor]
         else:
-            if self.monitor == "":
+            if self.monitor == '':
                 logger.info(f'topk and load_best_model require '
                             f'monitor to be set. The monitor that '
                             f'can be selected include '
@@ -371,7 +370,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
 
             def run_warp(data_bundle: DataBundle):
                 # 方便后续交互
-                parameters_or_data: dict = {"fastie_task": self}
+                parameters_or_data: dict = {'fastie_task': self}
 
                 if self.load_model != '':
                     self._on_get_state_dict_cache = Hub.load(self.load_model)
@@ -550,6 +549,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                         and len(self._on_setup_metrics_cache) > 0 \
                         and self.monitor is not None \
                         and get_flag() == 'train':
+
                     def model_save_fn(folder):
                         Hub.save(
                             os.path.join(folder, 'model.bin'),
@@ -600,6 +600,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                         self.refresh_cache()
                         self._will_refresh = False
                     yield run_warp(data_bundle)
+
         return run
 
     def refresh_cache(self):
@@ -612,8 +613,8 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
         self._on_get_state_dict_cache = None
 
     def run(self, data_bundle: DataBundle):
-        """
-        无需实现该方法.
+        """无需实现该方法.
+
         :param data_bundle: 包含 ``train``, ``dev``, ``test`` 或 ``infer`` 的数据集
         :return:
         """

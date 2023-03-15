@@ -2,14 +2,14 @@
 
 __all__ = ['Exhibition']
 
-import sys
 import os
+import sys
 
 from texttable import Texttable
 
 from fastie.dataset import DATASET
-from fastie.tasks import NER, EE, RE
 from fastie.envs import FASTIE_HOME
+from fastie.tasks import NER, EE, RE
 from fastie.utils import Config
 
 

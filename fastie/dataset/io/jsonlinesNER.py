@@ -1,15 +1,14 @@
 """JsonLinesNER dataset for FastIE."""
 __all__ = ['JsonLinesNER', 'JsonLinesNERConfig']
+
 import json
 import os
+from dataclasses import dataclass, field
 
-from fastie.dataset.BaseDataset import BaseDataset, DATASET, BaseDatasetConfig
-
-from fastNLP import DataSet, Instance, Vocabulary
+from fastNLP import DataSet, Instance
 from fastNLP.io import Loader, DataBundle
 
-from dataclasses import dataclass, field
-from typing import Union, Dict
+from fastie.dataset.BaseDataset import BaseDataset, DATASET, BaseDatasetConfig
 
 
 @dataclass
@@ -81,6 +80,7 @@ class JsonLinesNER(BaseDataset):
 
     def run(self) -> DataBundle:
         node = self
+
         class JsonNERLoader(Loader):
 
             def _load(self, path: str) -> DataSet:

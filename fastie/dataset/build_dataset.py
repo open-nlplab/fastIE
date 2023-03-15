@@ -1,15 +1,15 @@
 """Build dataset from different sources."""
 __all__ = ['build_dataset']
 
-from fastie.dataset.BaseDataset import DATASET
-from fastie.dataset.io.sentence import Sentence
-from fastie.envs import get_flag, get_dataset
-from fastie.utils.utils import parse_config
-
 from typing import Union, Optional, Sequence
 
 from fastNLP import DataSet, Instance
 from fastNLP.io import DataBundle
+
+from fastie.dataset.BaseDataset import DATASET
+from fastie.dataset.io.sentence import Sentence
+from fastie.envs import get_flag, get_dataset
+from fastie.utils.utils import parse_config
 
 
 def build_dataset(dataset: Optional[Union[str, Sequence[str], dict,

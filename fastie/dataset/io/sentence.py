@@ -1,5 +1,6 @@
 """Sentence dataset for inference."""
 __all__ = ['SentenceConfig', 'Sentence']
+
 from dataclasses import dataclass, field
 from typing import Union, Sequence, Optional
 
@@ -28,8 +29,6 @@ class Sentence(BaseDataset):
         .. code-block:: python
             data_bundle = Sentence(sentence='I love FastIE .').run()
             data_bundle = Sentence(sentence=['I love FastIE .', 'I love fastNLP .']).run()
-
-            
     """
     _config = SentenceConfig()
     _help = 'Input a sequence or sentences as a dataset. (Only for inference). '
