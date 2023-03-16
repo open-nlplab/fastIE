@@ -10,7 +10,7 @@ from typing import Union, Sequence, Optional
 from fastNLP import Evaluator, DataSet, Metric, auto_param_call
 from fastNLP.io import DataBundle
 
-from fastie.controller.BaseController import BaseController, CONTROLLER
+from fastie.controller.base_controller import BaseController, CONTROLLER
 from fastie.envs import set_flag, logger
 from fastie.node import BaseNodeConfig
 
@@ -23,7 +23,7 @@ class InferenceMetric(Metric):
     """
 
     def __init__(self, save_path: Optional[str] = None, verbose: bool = True):
-        super().__init__(aggregate_when_get_metric=False)
+        super().__init__(aggregate_when_get_metric=True)
         self.result: list = []
         self.save_path: Optional[str] = save_path
         self.verbose: bool = verbose
@@ -75,8 +75,7 @@ class InferenceMetric(Metric):
         self.result.extend(pred)
 
     def get_metric(self):
-        return reduce(lambda x, y: x.extend(y),
-                      self.all_gather_object(self.result))
+        return reduce(lambda x, y: x + y, self.all_gather_object(self.result))
 
 
 def generate_step_fn(evaluator, batch):
@@ -112,7 +111,6 @@ class Inference(BaseController):
     也可以使用命令行模式, 例如:
 
         .. code-block:: console
-            :linenos:
             $ fastie-infer --task ner/bert --dataset sentence --sentence It is located in Beijing --verbose
 
     :param save_path: 推理结果的保存路径, 应为一个文件名, 例如 ``result.jsonl``
@@ -172,15 +170,17 @@ class Inference(BaseController):
                 >>>   'entity_motions': [([4], "LOC")]}]
         """
         parameters_or_data = BaseController.run(self, parameters_or_data)
+        if self._sequential:
+            return parameters_or_data
         if parameters_or_data is None:
             logger.error(
                 'Inference tool do not allow task and dataset to be left '
                 'empty. ')
             exit(1)
-        parameters_or_data['evaluate_fn'] = 'inference_step'
+        parameters_or_data['evaluate_fn'] = 'infer_step'
         parameters_or_data['verbose'] = False
         inference_metric = InferenceMetric(save_path=self.save_path,
                                            verbose=self.verbose)
         parameters_or_data['metrics'] = {'infer': inference_metric}
         evaluator = Evaluator(**parameters_or_data)
-        return auto_param_call(evaluator.run, parameters_or_data)
+        return auto_param_call(evaluator.run, parameters_or_data)['infer']

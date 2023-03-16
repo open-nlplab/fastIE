@@ -8,10 +8,10 @@ from fastNLP import DataSet, auto_param_call
 from fastNLP import Trainer as FastNLP_Trainer
 from fastNLP.io import DataBundle
 
-from fastie.controller.BaseController import BaseController, CONTROLLER
+from fastie.controller.base_controller import BaseController, CONTROLLER
 from fastie.envs import set_flag, logger
 from fastie.node import BaseNodeConfig
-from fastie.tasks.BaseTask import BaseTask
+from fastie.tasks.base_task import BaseTask
 
 
 @dataclass
@@ -27,7 +27,6 @@ class Trainer(BaseController):
     也可以使用命令行模式, 例如:
 
         .. code-block:: console
-            :linenos:
             $ fastie-train --task ner/bert --dataset conll2003 --topk 3 --save_model model.pkl
     """
     _config = TrainerConfig()
@@ -45,7 +44,6 @@ class Trainer(BaseController):
         也可以使用命令行模式, 例如:
 
         .. code-block:: console
-            :linenos:
             $ fastie-inference --task ner/bert --dataset conll2003 --save_path result.jsonl
 
         :param parameters_or_data: 既可以是 task，也可以是数据集:
@@ -78,6 +76,8 @@ class Trainer(BaseController):
         :return: ``None``
         """
         parameters_or_data = BaseController.run(self, parameters_or_data)
+        if self._sequential:
+            return parameters_or_data
         if parameters_or_data is None:
             logger.error(
                 'Training tool do not allow task and dataset to be left '

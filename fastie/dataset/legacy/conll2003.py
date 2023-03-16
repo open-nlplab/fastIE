@@ -9,7 +9,7 @@ from datasets import load_dataset
 from fastNLP import DataSet, Instance
 from fastNLP.io import DataBundle
 
-from fastie.dataset.BaseDataset import BaseDataset, DATASET, BaseDatasetConfig
+from fastie.dataset.base_dataset import BaseDataset, DATASET, BaseDatasetConfig
 
 
 @dataclass

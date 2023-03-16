@@ -7,7 +7,7 @@ from typing import Union, Sequence, Optional
 from fastNLP import DataSet, Instance, Vocabulary
 from fastNLP.io import DataBundle
 
-from fastie.dataset.BaseDataset import DATASET, BaseDataset, BaseDatasetConfig
+from fastie.dataset.base_dataset import DATASET, BaseDataset, BaseDatasetConfig
 
 
 @dataclass

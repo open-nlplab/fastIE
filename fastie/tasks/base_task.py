@@ -8,13 +8,14 @@ from dataclasses import dataclass, field
 from typing import Sequence, Union, Generator, Optional, Any, Dict
 
 from fastNLP import Vocabulary, Callback, prepare_dataloader
-from fastNLP.core.callbacks import CheckpointCallback, LoadBestModelCallback
+from fastNLP.core.callbacks import CheckpointCallback
 from fastNLP.io import DataBundle
 
 from fastie.envs import get_flag, logger
 from fastie.node import BaseNode, BaseNodeConfig
 from fastie.utils.hub import Hub
 from fastie.utils.registry import Registry
+from fastie.dataset.base_dataset import BaseDataset
 
 NER: Registry = Registry('NER')
 RE: Registry = Registry('RE')
@@ -58,17 +59,16 @@ class BaseTaskConfig(BaseNodeConfig, metaclass=abc.ABCMeta):
                                      help='Is the `metric` monitored by '
                                      '`monitor` the larger the better. ',
                                      existence='train'))
-    topk: int = field(
-        default=0,
+    topk: int = field(default=0,
+                      metadata=dict(
+                          help='Save the top-k model to `topk_folder` '
+                          'according to the `monitor`. ',
+                          existence='train'))
+    topk_folder: str = field(
+        default=os.getcwd(),
         metadata=dict(
-            help='Save the top-k model to `save_model_folder`/fastie_topk_model '
-            'according to the `monitor`. ',
-            existence='train'))
-    load_best_model: bool = field(
-        default=False,
-        metadata=dict(
-            help='Save the best model to `save_model_folder`/fastie_best_model '
-            'according to the `monitor`. ',
+            help='The folder to save the top-k model. Stay unset to save '
+            'the top-k model in the current directory. ',
             existence='train'))
 
     fp16: bool = field(default=False,
@@ -87,16 +87,22 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
     """FastIE 的任务基类，所有任务需要继承基类并重写生命周期方法。
 
     :param load_model: 模型文件的路径或者模型名
-    :param save_model_folder: ``topk`` 或 ``load_best_model`` 保存模型的文件夹
     :param batch_size: batch size
     :param epochs: 训练的轮数
     :param monitor: 根据哪个 ``metric`` 选择  ``topk`` 和 ``load_best_model``；
         如果不设置，则默认使用结果中的第一个 ``metric``
     :param is_large_better: ``metric`` 中 ``monitor`` 监控的指标是否越大越好
     :param topk: 将 ``metric`` 中 ``monitor`` 监控的指标最好的 k 个模型保存到
-        ``save_model_folder`` 中
-    :param load_best_model: 是否在训练结束后将 ``metric`` 中 ``monitor`` 监控的指标最
-        好的模型保存到 ``save_model_folder`` 中，并自动加载到 ``task`` 中
+        ``topk_folder`` 中
+    :param topk_folder: 将 ``metric`` 中 ``monitor`` 监控的指标最好的 k 个模型保存到
+        ``topk_folder`` 中，为空则保存到当前工作目录。将在该目录下建立以时间戳命名的文件夹，
+        文件夹内为以 ``epoch`` ``batch`` 和 ``metric`` 命名的文件夹，文件夹内为模型文件:
+
+        - topk_folder
+            - YYYY-mm-dd-HH_MM_SS_fffff/  # 自动根据当前脚本的启动时间创建的
+                - model-epoch_{epoch_idx}-batch_{global_batch_idx}-{monitor}_{monitor_value}/
+                    - model.bin
+
     :param fp16: 是否使用混合精度训练
     :param evaluate_every: 训练过程中检验的频率,
         ``topk`` 和 ``load_best_model`` 将在所有的检验中选择:
@@ -106,7 +112,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
     :param device: 指定具体训练时使用的设备
         device 的可选输入如下所示:
             * *str*: 例如 ``'cpu'``, ``'cuda'``, ``'cuda:0'``, ``'cuda:1'``,
-            `'gpu:0'`` 等；
+            ``gpu:0`` 等；
             * *int*: 将使用 ``device_id`` 为该值的 ``gpu`` 进行训练；如果值为 -1，那么
             默认使用全部的显卡；
             * *list(int)*: 如果多于 1 个device，应当通过该种方式进行设定，将会启用分布式程序。
@@ -117,23 +123,21 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
 
     def __init__(self,
                  load_model: str = '',
-                 save_model_folder: str = '',
                  batch_size: int = 32,
                  epochs: int = 20,
                  monitor: str = '',
                  is_large_better: bool = True,
                  topk: int = 0,
-                 load_best_model: bool = False,
+                 topk_folder: str = '',
                  fp16: bool = False,
                  evaluate_every: int = -1,
                  device: Union[int, Sequence[int], str] = 'cpu',
                  **kwargs):
         BaseNode.__init__(self, **kwargs)
         self.load_model = load_model
-        self.save_model_folder = save_model_folder
         self.epochs = epochs
         self.topk = topk
-        self.load_best_model = load_best_model
+        self.topk_folder = topk_folder
         self.monitor = monitor
         self.is_large_better = is_large_better
         self.fp16 = fp16
@@ -199,7 +203,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
         :param tag_vocab: 标签词典
         :param state_dict: 加载模型得到的 ``state_dict``，可能为 ``None``
         :return: 拥有 ``train_step``、``evaluate_step``、
-            ``inference_step`` 方法的对象
+            ``infer_step`` 方法的对象
         """
         raise NotImplementedError('Model setup method must be implemented. ')
 
@@ -344,7 +348,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
             return result[self.monitor]
         else:
             if self.monitor == '':
-                logger.info(f'topk and load_best_model require '
+                logger.info(f'topk requires '
                             f'monitor to be set. The monitor that '
                             f'can be selected include '
                             f"[{','.join(list(result.keys()))}], "
@@ -353,7 +357,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                 self.monitor = list(result.keys())[0]
                 return result[self.monitor]
             else:
-                logger.warning(f'topk and load_best_model require '
+                logger.warning(f'topk requires '
                                f'monitor to be set. The monitor '
                                f'{self.monitor} you set is not in '
                                f'the optional monitor range: '
@@ -369,6 +373,8 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
             self.refresh_cache()
 
             def run_warp(data_bundle: DataBundle):
+                if isinstance(data_bundle, BaseDataset):
+                    data_bundle = data_bundle.run()
                 # 方便后续交互
                 parameters_or_data: dict = {'fastie_task': self}
 
@@ -414,16 +420,15 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                             'The model you are using does not '
                             'have a `evaluate_step` method, which '
                             'is required for evaluating.')
-                if not hasattr(parameters_or_data['model'], 'inference_step'):
+                if not hasattr(parameters_or_data['model'], 'infer_step'):
                     logger.warning(
                         'The model you are using does not have a '
-                        '`inference_step` method, which is required for '
+                        '`infer_step` method, which is required for '
                         'infering.')
                     if get_flag() == 'infer':
-                        raise RuntimeError(
-                            'The model you are using does not '
-                            'have a `inference_step` method, which '
-                            'is required for inferring.')
+                        raise RuntimeError('The model you are using does not '
+                                           'have a `infer_step` method, which '
+                                           'is required for inferring.')
                 if get_flag() == 'train':
                     if not self._on_setup_optimizers_cache:
                         self._on_setup_optimizers_cache = \
@@ -498,8 +503,8 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                 else:
                     parameters_or_data['device'] = self.device
                 # 保存模型相关
-                if self.save_model_folder == '':
-                    self.save_model_folder = os.getcwd()
+                if self.topk_folder == '':
+                    self.topk_folder = os.getcwd()
                 # monitor 相关
                 self.monitor = '' if self.monitor is None else self.monitor
                 # is_large_better
@@ -529,8 +534,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                                 _on_generate_and_check_tag_vocab_cache))
 
                     callback_parameters = dict(
-                        folder=os.path.join(self.save_model_folder,
-                                            'fastie_topk_model'),
+                        folder=self.topk_folder,
                         topk=self.topk if self.topk != 0 else -self.topk,
                         larger_better=self.is_large_better,
                         model_save_fn=model_save_fn,
@@ -543,41 +547,44 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                             self._on_setup_callbacks_cache
                     else:
                         parameters_or_data['callbacks'] = [callback]
+
                 # load_best_model 相关
-                if self.load_best_model \
-                        and isinstance(self._on_setup_metrics_cache, dict) \
-                        and len(self._on_setup_metrics_cache) > 0 \
-                        and self.monitor is not None \
-                        and get_flag() == 'train':
 
-                    def model_save_fn(folder):
-                        Hub.save(
-                            os.path.join(folder, 'model.bin'),
-                            self.on_get_state_dict(
-                                model=self._on_setup_model_cache,
-                                data_bundle=self._on_dataset_preprocess_cache,
-                                tag_vocab=self.
-                                _on_generate_and_check_tag_vocab_cache))
+                # if self.load_best_model \
+                #         and isinstance(self._on_setup_metrics_cache, dict) \
+                #         and len(self._on_setup_metrics_cache) > 0 \
+                #         and self.monitor is not None \
+                #         and get_flag() == 'train':
+                #
+                #     def model_save_fn(folder):
+                #         Hub.save(
+                #             os.path.join(folder, 'model.bin'),
+                #             self.on_get_state_dict(
+                #                 model=self._on_setup_model_cache,
+                #                 data_bundle=self._on_dataset_preprocess_cache,
+                #                 tag_vocab=self.
+                #                 _on_generate_and_check_tag_vocab_cache))
+                #
+                #     def model_load_fn(folder):
+                #         self._on_get_state_dict_cache = Hub.load(
+                #             os.path.join(folder, 'model.bin'))
+                #         self._will_refresh = True
+                #
+                #     callback = LoadBestModelCallback(
+                #         monitor=self._safe_metric_factory,
+                #         model_save_fn=model_save_fn,
+                #         model_load_fn=model_load_fn,
+                #         save_folder=os.path.join(self.save_model_folder,
+                #                                  'fastie_best_model_cache'),
+                #         delete_after_train=False,
+                #         larger_better=self.is_large_better)
+                #     if self._on_setup_callbacks_cache is not None:
+                #         self._on_setup_callbacks_cache.append(callback)
+                #         parameters_or_data['callbacks'] = \
+                #             self._on_setup_callbacks_cache
+                #     else:
+                #         parameters_or_data['callbacks'] = [callback]
 
-                    def model_load_fn(folder):
-                        self._on_get_state_dict_cache = Hub.load(
-                            os.path.join(folder, 'model.bin'))
-                        self._will_refresh = True
-
-                    callback = LoadBestModelCallback(
-                        monitor=self._safe_metric_factory,
-                        model_save_fn=model_save_fn,
-                        model_load_fn=model_load_fn,
-                        save_folder=os.path.join(self.save_model_folder,
-                                                 'fastie_best_model_cache'),
-                        delete_after_train=False,
-                        larger_better=self.is_large_better)
-                    if self._on_setup_callbacks_cache is not None:
-                        self._on_setup_callbacks_cache.append(callback)
-                        parameters_or_data['callbacks'] = \
-                            self._on_setup_callbacks_cache
-                    else:
-                        parameters_or_data['callbacks'] = [callback]
                 # 训练轮数
                 if get_flag() == 'train':
                     parameters_or_data['n_epochs'] = self.epochs
@@ -588,7 +595,7 @@ class BaseTask(BaseNode, metaclass=abc.ABCMeta):
                     parameters_or_data['evaluate_every'] = self.evaluate_every
                 # 为 infer 的情景修改执行函数
                 if get_flag() == 'infer':
-                    parameters_or_data['evaluate_fn'] = 'inference_step'
+                    parameters_or_data['evaluate_fn'] = 'infer_step'
 
                 return parameters_or_data
 

@@ -1,4 +1,4 @@
-from .BaseController import BaseController, CONTROLLER
+from .base_controller import BaseController, CONTROLLER
 from .evaluator import Evaluator, EvaluatorConfig
 from .inference import Inference, InferenceConfig
 from .interactor import Interactor, InteractorConfig

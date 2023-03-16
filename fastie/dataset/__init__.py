@@ -1,4 +1,4 @@
-from .BaseDataset import BaseDataset, DATASET, BaseDatasetConfig
+from .base_dataset import BaseDataset, DATASET, BaseDatasetConfig
 from .build_dataset import build_dataset
 from .io import ColumnNER, ColumnNERConfig, Sentence, SentenceConfig, \
     JsonLinesNER, JsonLinesNERConfig

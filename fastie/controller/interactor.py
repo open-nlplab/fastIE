@@ -10,7 +10,7 @@ from typing import Union, Sequence, Optional
 from fastNLP import DataSet
 from fastNLP.io import DataBundle
 
-from fastie.controller.BaseController import BaseController, CONTROLLER
+from fastie.controller.base_controller import BaseController, CONTROLLER
 from fastie.controller.inference import Inference
 from fastie.envs import set_flag, logger
 from fastie.node import BaseNodeConfig
@@ -35,7 +35,6 @@ class Interactor(BaseController):
     """交互器 用于在命令行模式中进行交互式的预测, 例如:
 
         .. code-block:: console
-            :linenos:
             $ fastie-interact --task ner/bert --load_model model.pkl --cuda --log interactive.log
 
     :param log: 交互日志的保存路径, 如果不设置, 则不会保存日志
@@ -54,6 +53,8 @@ class Interactor(BaseController):
             parameters_or_data: Optional[Union[dict, DataBundle, DataSet, str,
                                                Sequence[str]]] = None):
         parameters_or_data = BaseController.run(self, parameters_or_data)
+        if self._sequential:
+            return parameters_or_data
         if parameters_or_data is None:
             logger.error(
                 'Interacting tool do not allow task and dataset to be left '

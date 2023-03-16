@@ -15,7 +15,7 @@ from fastNLP.transformers.torch.models.bert import BertModel, BertConfig, \
     BertTokenizer
 from torch import nn
 
-from fastie.tasks.BaseTask import NER
+from fastie.tasks.base_task import NER
 from fastie.tasks.ner.BaseNERTask import BaseNERTask, BaseNERTaskConfig
 
 
@@ -94,7 +94,7 @@ class Model(nn.Module):
         ])
         return dict(pred=pred, target=target)
 
-    def inference_step(self, tokens, input_ids, attention_mask, offset_mask):
+    def infer_step(self, tokens, input_ids, attention_mask, offset_mask):
         features = self.forward(input_ids, attention_mask)['features']
         pred_list = []
         for b in range(features.shape[0]):
@@ -220,9 +220,11 @@ class BertNER(BaseNERTask):
         :param data_bundle: 预处理后的数据集
         :param tag_vocab: 生成或加载的 `tag_vocab`
         :param state_dict: 加载的 `checkpoint`
-        :return: 拥有 ``train_step``、``evaluate_step``、 ``inference_step``
+        :return: 拥有 ``train_step``、``evaluate_step``、 ``infer_step``
             方法的对象
         """
+        if 'entity' not in tag_vocab.keys():
+            raise Exception('Failed to get `tag_vocab`')
         # 模型加载阶段
         model = Model(self.pretrained_model_name_or_path,
                       num_labels=len(list(
@@ -259,3 +261,10 @@ class BertNER(BaseNERTask):
         """
         # 评价指标加载阶段
         return {'accuracy': Accuracy()}
+
+    def on_get_state_dict(self, model, data_bundle: DataBundle,
+                          tag_vocab: Dict[str, Vocabulary]) -> dict:
+        state_dict = super().on_get_state_dict(model, data_bundle, tag_vocab)
+        state_dict[
+            'pretrained_model_name_or_path'] = self.pretrained_model_name_or_path
+        return state_dict

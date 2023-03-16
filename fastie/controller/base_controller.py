@@ -9,7 +9,7 @@ from fastNLP.io import DataBundle
 
 from fastie.dataset.build_dataset import build_dataset
 from fastie.node import BaseNode
-from fastie.tasks import build_task
+from fastie.tasks import build_task, BaseTask, SequentialTask
 from fastie.utils import Registry
 
 CONTROLLER: Registry = Registry('CONTROLLER')
@@ -20,11 +20,13 @@ class BaseController(BaseNode):
 
     def __init__(self, **kwargs):
         BaseNode.__init__(self, **kwargs)
+        self._sequential = False
 
     def run(self,
             parameters_or_data: Optional[Union[dict, DataBundle, DataSet, str,
-                                               Sequence[str],
-                                               Sequence[dict]]] = None):
+                                               Sequence[str], Sequence[dict],
+                                               BaseTask, Generator,
+                                               SequentialTask]] = None):
         """控制器基类的 ``run`` 方法，用于实际地对传入的 ``task`` 或是数据集进行训练, 验证或推理.
 
         :param parameters_or_data: 既可以是 task，也可以是数据集:
@@ -67,7 +69,10 @@ class BaseController(BaseNode):
         """
         if callable(parameters_or_data):
             parameters_or_data = parameters_or_data()
-        if isinstance(parameters_or_data, Generator):
+        if isinstance(parameters_or_data, Generator) and hasattr(
+                parameters_or_data, '__qualname__'):
+            if parameters_or_data.__qualname__ == 'SequentialTask.run':  # type: ignore [attr-defined]
+                self._sequential = True
             parameters_or_data = next(parameters_or_data)
         if isinstance(parameters_or_data, dict) \
                 and 'model' in parameters_or_data.keys():

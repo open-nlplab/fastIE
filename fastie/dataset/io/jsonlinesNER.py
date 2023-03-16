@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from fastNLP import DataSet, Instance
 from fastNLP.io import Loader, DataBundle
 
-from fastie.dataset.BaseDataset import BaseDataset, DATASET, BaseDatasetConfig
+from fastie.dataset.base_dataset import BaseDataset, DATASET, BaseDatasetConfig
 
 
 @dataclass

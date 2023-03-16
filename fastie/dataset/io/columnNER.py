@@ -10,7 +10,7 @@ from typing import Union, Sequence, List
 from fastNLP import DataSet, Instance
 from fastNLP.io import Loader, DataBundle
 
-from fastie.dataset.BaseDataset import DATASET, BaseDatasetConfig, BaseDataset
+from fastie.dataset.base_dataset import DATASET, BaseDatasetConfig, BaseDataset
 
 
 @dataclass

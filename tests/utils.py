@@ -1,8 +1,9 @@
 import os
 import tempfile
+import pytest
+
 from typing import Type
 
-import pytest
 from fastNLP.io import DataBundle
 
 from fastie import Trainer, Evaluator, Inference, BaseTask

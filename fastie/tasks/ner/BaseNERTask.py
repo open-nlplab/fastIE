@@ -8,7 +8,7 @@ from fastNLP import Vocabulary
 from fastNLP.io import DataBundle
 
 from fastie.envs import logger
-from fastie.tasks.BaseTask import BaseTask, BaseTaskConfig
+from fastie.tasks.base_task import BaseTask, BaseTaskConfig
 from fastie.utils.utils import generate_tag_vocab, check_loaded_tag_vocab
 
 

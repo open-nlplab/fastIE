@@ -8,7 +8,7 @@ from fastNLP import DataSet, auto_param_call
 from fastNLP import Evaluator as FastNLP_Evaluator
 from fastNLP.io import DataBundle
 
-from fastie.controller.BaseController import BaseController, CONTROLLER
+from fastie.controller.base_controller import BaseController, CONTROLLER
 from fastie.envs import set_flag
 from fastie.node import BaseNodeConfig
 
@@ -36,7 +36,6 @@ class Evaluator(BaseController):
         也可以使用命令行模式, 例如:
 
         .. code-block:: console
-            :linenos:
             $ fastie-inference --task ner/bert --dataset conll2003 --save_path result.jsonl
 
         :param parameters_or_data: 既可以是 task，也可以是数据集:
@@ -69,6 +68,8 @@ class Evaluator(BaseController):
             >>> {'acc': 0.0, 'f1': 0.0, 'precision': 0.0, 'recall': 0.0}
         """
         parameters_or_data = BaseController.run(self, parameters_or_data)
+        if self._sequential:
+            return parameters_or_data
         if parameters_or_data is None:
             raise Exception(
                 'Evaluating tool do not allow task or dataset to be left '

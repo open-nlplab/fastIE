@@ -115,13 +115,14 @@ def check_loaded_tag_vocab(
         if get_flag() != 'infer':
             if word2idx != tag_vocab.word2idx:
                 if set(word2idx.keys()) == set(  # type: ignore [union-attr]
-                        tag_vocab.word2idx.keys()
+                        tag_vocab.word2idx.keys()  # type: ignore [union-attr]
                 ):  # type: ignore [union-attr]
                     tag_vocab._word2idx.update(word2idx)
                     tag_vocab._idx2word.update(idx2word)
                     return 1, tag_vocab
                 elif set(tag_vocab.word2idx.keys()  # type: ignore [union-attr]
-                         ).issubset(set(tag_vocab.word2idx.keys())):
+                         ).issubset(set(
+                             word2idx.keys())):  # type: ignore [union-attr]
                     tag_vocab._word2idx.update(word2idx)
                     tag_vocab._idx2word.update(idx2word)
                     return 1, tag_vocab
